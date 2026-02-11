@@ -1,17 +1,20 @@
+import coupleImg from "@/assets/couple.png";
 import { ArrowRight, Heart, Shield, Users } from "lucide-react";
 import { Button } from "./ui/button";
-
 export const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       
       {/* BACKGROUND IMAGE avec OVERLAY SOMBRE */}
       <div className="absolute inset-0 z-0">
+       
+
         <img
-          src="/images/couple.png"
+          src={coupleImg}
           alt="Mariage TimaLove"
-          className="w-full h-full object-cover" 
+          className="w-full h-full object-cover"
         />
+
         {/* Couche noire pour l'opacité et dégradé pour la profondeur */}
         <div className="absolute inset-0 bg-black/50" /> 
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
