@@ -1,70 +1,72 @@
-// Fichier : supabase/functions/naboo-webhook/index.ts
-
-// On ignore l'avertissement de Deno pour les imports URL car c'est standard dans les Edge Functions
-// deno-lint-ignore-file no-import-prefix
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 serve(async (req) => {
-  const supabaseClient = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   )
 
   try {
     const payload = await req.json()
-    console.log("Webhook reçu de Naboo:", payload)
+    console.log("🔔 Webhook Naboo reçu :", payload)
 
-    const { order_id, status } = payload
+    const { order_id, transaction_status } = payload
 
-    if (status === 'paid') {
-      // A. Mettre à jour la transaction
-      const { data: transaction, error: txError } = await supabaseClient
-        .from('transactions')
-        .update({ status: 'paid' })
-        .eq('order_id', order_id)
-        .select('user_id')
-        .single()
-
+    if (transaction_status === "paid") {
+      
+      // 1. RETROUVER L'UTILISATEUR grâce à l'order_id
+      // On cherche dans la table qu'on a remplie à l'étape 2
+      const { data: transaction, error: txError } = await supabase
+         .from('transactions')
+         .select('user_id')
+         .eq('order_id', order_id)
+         .single();
+      
       if (txError || !transaction) {
-        console.error("Transaction introuvable ou erreur update:", txError)
-        // On renvoie quand même 200 pour que Naboo arrête de réessayer, même si chez nous ça a raté
-        return new Response("Erreur interne transaction", { status: 200 })
+          console.error("❌ Transaction introuvable pour order_id:", order_id);
+          // On répond 200 pour que Naboo arrête d'insister, même si on a pas trouvé
+          return new Response(JSON.stringify({ message: "Transaction inconnue" }), { status: 200 });
       }
 
-      // B. Activer l'abonnement
-      // On calcule la date de fin (aujourd'hui + 30 jours)
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + 30);
+      const userId = transaction.user_id;
+      console.log(`✅ Paiement confirmé pour l'utilisateur : ${userId}`);
 
-      const { error: profileError } = await supabaseClient
-        .from('profiles')
-        .update({ 
-          subscription_status: 'active',
-          subscription_end_date: endDate.toISOString()
+      // 2. CALCULER LA DATE DE FIN (+3 mois)
+      const newEndDate = new Date();
+      newEndDate.setMonth(newEndDate.getMonth() + 3);
+
+      // 3. ACTIVER L'ABONNEMENT
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          subscription_status: "active",
+          subscription_end_date: newEndDate.toISOString()
         })
-        .eq('id', transaction.user_id)
+        .eq("id", userId);
 
-      if (profileError) {
-        console.error("Erreur activation profil:", profileError)
-      } else {
-        console.log(`Succès ! Utilisateur ${transaction.user_id} activé jusqu'au ${endDate.toISOString()}`)
-      }
+      if (updateError) console.error("Erreur update profile:", updateError);
+
+      // 4. Mettre à jour le statut de la transaction
+      await supabase
+        .from("transactions")
+        .update({ status: 'paid' })
+        .eq('order_id', order_id);
     }
 
-    return new Response(JSON.stringify({ received: true }), {
-      headers: { "Content-Type": "application/json" },
-      status: 200,
+    return new Response(JSON.stringify({ success: true }), { 
+        headers: { "Content-Type": "application/json" }, status: 200 
     })
 
-  } catch (error: unknown) {
-    // Correction du type 'unknown'
-    const msg = (error as Error).message || String(error);
-    console.error("Erreur Webhook:", msg)
-    return new Response(JSON.stringify({ error: msg }), {
+  } catch (err) {
+    // On convertit l'erreur en texte proprement pour TypeScript
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    
+    console.error("Erreur critique Webhook:", errorMessage)
+    
+    return new Response(JSON.stringify({ error: errorMessage }), { 
       headers: { "Content-Type": "application/json" },
-      status: 400,
+      status: 400 
     })
   }
 })

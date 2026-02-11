@@ -52,25 +52,36 @@ const UserProfile = () => {
           // 2. NOUVEAU : Récupérer le statut d'abonnement (Table profiles)
           const { data: subscriptionData } = await supabase
             .from('profiles')
-            .select('subscription_status')
+            .select('subscription_status, subscription_end_date')
             .eq('id', user.id)
             .single();
+
 
           if (profile) {
             const isFemale = profile.gender.toLowerCase().startsWith('f');
             setUserSexe(isFemale ? 'femme' : 'homme');
 
-            // 3. LOGIQUE MISE À JOUR :
-            // L'utilisateur a payé si c'est une femme OU si l'abonnement est 'active'
-            const isPremium = subscriptionData?.subscription_status === 'active';
-            setHasPaid(isFemale || isPremium); 
-            
+            // 🔐 Vérification abonnement avec date d'expiration
+            let isPremium = false;
+
+            if (
+              subscriptionData?.subscription_status === 'active' &&
+              subscriptionData?.subscription_end_date
+            ) {
+              const endDate = new Date(subscriptionData.subscription_end_date);
+              isPremium = endDate > new Date();
+            }
+
+            // Femme = accès direct
+            setHasPaid(isFemale || isPremium);
+
             setMyPhotos({
               photo_url: profile.photo_url,
               photo_url_2: profile.photo_url_2,
               photo_url_3: profile.photo_url_3
             });
           }
+
 
           fetchNotifications(user.id);
 

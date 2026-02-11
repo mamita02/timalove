@@ -15,6 +15,7 @@ import UserProfile from "./pages/UserProfile";
 
 // --- IMPORTS ADMIN ---
 import AdminInscriptions from "./pages/AdminInscriptions";
+import { AdminPaiements } from "./pages/AdminPaiements";
 import { AdminReviews } from "./pages/AdminReviews";
 import { AdminSettings } from "./pages/AdminSettings"; // <--- 1. AJOUT ICI
 
@@ -43,6 +44,7 @@ const App = () => (
           {/* ADMINISTRATION */}
           <Route path="/admin" element={<AdminPage />} /> 
           <Route path="/admin/inscriptions" element={<AdminInscriptions />} />
+          <Route path="/admin/paiements" element={<AdminPaiements />} />
           <Route path="/admin/avis" element={<AdminReviews />} />
           
           {/* 2. AJOUT DE LA ROUTE PARAMÈTRES ICI */}

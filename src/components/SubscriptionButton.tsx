@@ -1,50 +1,61 @@
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
-import { Loader2 } from "lucide-react"; // On utilise Loader2, c'est plus stable
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
+import { supabase } from "../integrations/supabase/client";
 
-const SubscriptionButton = ({ userId }: { userId: string }) => {
+interface SubscriptionButtonProps {
+  userId: string;
+}
+
+const SubscriptionButton = ({ userId }: SubscriptionButtonProps) => {
   const [loading, setLoading] = useState(false);
 
   const handleSubscribe = async () => {
     try {
       setLoading(true);
-      console.log("Lancement du paiement pour l'utilisateur :", userId);
 
-      const { data, error } = await supabase.functions.invoke('naboo-handler', {
-        body: { userId }
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        alert("Utilisateur non connecté.");
+        setLoading(false);
+        return;
+      }
+
+      const response = await supabase.functions.invoke("naboo-create", {
+        body: { userId: user.id }
       });
 
+      const { data, error } = response;
+
       if (error) {
-        throw error;
+        throw new Error(error.message);
       }
 
-      if (data?.checkout_url) {
-        window.location.href = data.checkout_url;
-      } else {
-        throw new Error("Pas d'URL de paiement reçue");
+      // 🔥 FORCER PARSE
+      const parsed =
+        typeof data === "string"
+          ? JSON.parse(data)
+          : data;
+
+      if (!parsed?.url) {
+        throw new Error("URL manquante dans la réponse");
       }
 
-    } catch (err: any) {
-  console.error("Erreur complète:", err);
+      window.location.href = parsed.url;
 
-  const serverMessage =
-    err?.context?.body?.error ||
-    err?.message ||
-    "Erreur inconnue";
-
-  alert(`Erreur serveur : ${serverMessage}`);
-}
- finally {
+    } catch (err) {
+      console.error("Erreur paiement:", err);
+      alert("Erreur de connexion au service de paiement.");
       setLoading(false);
     }
   };
 
   return (
-    <Button 
-      onClick={handleSubscribe} 
+    <Button
+      onClick={handleSubscribe}
       disabled={loading}
-      className="bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-all transform hover:scale-105"
+      className="bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-6 rounded-full shadow-lg"
     >
       {loading ? (
         <span className="flex items-center gap-2">
@@ -52,7 +63,7 @@ const SubscriptionButton = ({ userId }: { userId: string }) => {
           Chargement...
         </span>
       ) : (
-        "S'abonner - 5000 FCFA"
+        "S'abonner – 5000 FCFA"
       )}
     </Button>
   );

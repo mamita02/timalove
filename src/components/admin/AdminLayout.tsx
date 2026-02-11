@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { CreditCard } from "lucide-react";
+
 import {
   ChevronRight,
   Heart,
@@ -31,6 +33,13 @@ const menuItems = [
     icon: Users,
     description: "Gérer les inscriptions",
   },
+  {
+  title: "Paiements",
+  href: "/admin/paiements",
+  icon: CreditCard,
+  description: "Historique des paiements",
+ },
+
   // --- AJOUT DEBUT ---
   {
     title: "Avis",

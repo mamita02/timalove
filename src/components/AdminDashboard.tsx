@@ -37,6 +37,8 @@ export const InscriptionsManager = () => {
   const navigate = useNavigate();
   // ... tes autres useState
 const [uploading, setUploading] = useState(false); // <--- AJOUTE ÇA
+const [transactions, setTransactions] = useState<any[]>([]);
+
 
   // --- 1. CHARGEMENT DES DONNÉES ---
   const loadRegistrations = async () => {
@@ -53,8 +55,23 @@ const [uploading, setUploading] = useState(false); // <--- AJOUTE ÇA
     }
   };
 
+  const loadTransactions = async () => {
+  try {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    setTransactions(data || []);
+  } catch (err) {
+    console.error("Erreur chargement transactions:", err);
+  }
+};
+
   useEffect(() => {
     loadRegistrations();
+    loadTransactions();
   }, []);
 
   // --- 2. LOGIQUE DE FILTRAGE (Déclarée avant les stats) ---
