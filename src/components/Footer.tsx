@@ -1,5 +1,5 @@
+import logo from "@/assets/logo.png"; // ✅ Import Vite
 import { Facebook, Heart, Instagram, Twitter, Youtube } from "lucide-react";
-import { Logo } from "./Logo";
 
 const footerLinks = [
   { label: "Accueil", href: "#" },
@@ -18,10 +18,14 @@ export const Footer = () => {
         
         {/* 1. LOGO CENTRAL */}
         <div className="mb-8">
-          <Logo size="lg" />
+          <img
+            src={logo}
+            alt="TimaLove Logo"
+            className="h-20 w-auto object-contain"
+          />
         </div>
 
-        {/* 2. SECTION REJOIGNEZ-NOUS AVEC LIGNES LATÉRALES */}
+        {/* 2. SECTION REJOIGNEZ-NOUS */}
         <div className="w-full max-w-4xl flex items-center gap-6 mb-8">
           <div className="h-[1px] flex-1 bg-primary/30" />
           <h4 className="text-primary font-bold tracking-[0.3em] uppercase text-sm md:text-base whitespace-nowrap">
@@ -30,7 +34,7 @@ export const Footer = () => {
           <div className="h-[1px] flex-1 bg-primary/30" />
         </div>
 
-        {/* 3. RÉSEAUX SOCIAUX (Icônes sombres circulaires) */}
+        {/* 3. RÉSEAUX SOCIAUX */}
         <div className="flex gap-4 mb-10">
           {[
             { Icon: Facebook, href: "#" },
@@ -48,7 +52,7 @@ export const Footer = () => {
           ))}
         </div>
 
-        {/* 4. NAVIGATION HORIZONTALE (Respecte la Navbar) */}
+        {/* 4. NAVIGATION */}
         <nav className="mb-12">
           <ul className="flex flex-wrap justify-center gap-x-8 gap-y-4">
             {footerLinks.map((link) => (
@@ -64,7 +68,7 @@ export const Footer = () => {
           </ul>
         </nav>
 
-        {/* 5. COPYRIGHT & NOTE FINALE */}
+        {/* 5. COPYRIGHT */}
         <div className="w-full pt-8 border-t border-rose-100/50 flex flex-col items-center gap-4">
           <p className="text-[10px] md:text-xs text-slate-400 text-center uppercase tracking-wider">
             Copyright © {new Date().getFullYear()} TimaLove. Tous droits réservés.

@@ -1,3 +1,4 @@
+import TimaImg from "@/assets/Tima.png";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -17,11 +18,11 @@ const QuiSuisJe = () => {
           
           {/* IMAGE DE DROITE : Intégration douce */}
           <div className="absolute inset-y-0 right-0 w-full lg:w-1/2 flex items-center justify-end pr-4 lg:pr-12 pointer-events-none">
-            <img 
-              src="src/assets/A PROPOS1Plan de travail 5.png" 
-              alt="Fatimata Ba - TimaLove" 
-              className="w-auto h-[60%] lg:h-[75%] object-contain opacity-90" 
-            />
+            <img
+                src={TimaImg}
+                alt="Mariage TimaLove"
+                className="w-full h-full object-cover"
+              />
           </div>
 
           <div className="container mx-auto h-full px-4 relative z-10 flex items-center">

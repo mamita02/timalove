@@ -1,3 +1,4 @@
+import mainsmariesImg from "@/assets/mainsmaries.png";
 import { Heart, MessageCircle, Search, UserPlus } from "lucide-react";
 
 const steps = [
@@ -33,11 +34,11 @@ export const ConceptSection = () => {
       
       {/* IMAGE DE FOND - VISIBILITÉ MAXIMUM */}
       <div className="absolute inset-0 z-0">
-        <img 
-          src="src/assets/mainsmaries.png" 
-          alt="Background Couple TimaLove" 
-          className="w-full h-full object-cover object-center opacity-85" // Augmenté à 85% pour voir l'image clairement
-        />
+        <img
+                src={mainsmariesImg}
+                alt="Mariage TimaLove"
+                className="w-full h-full object-cover"
+              />
         {/* Overlay Noir très léger (2% comme tu as suggéré ou presque transparent) */}
         <div className="absolute inset-0 bg-black/5" /> 
         

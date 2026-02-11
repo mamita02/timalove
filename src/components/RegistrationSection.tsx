@@ -1,3 +1,4 @@
+import rencontreImg from "@/assets/mainsmaries.png";
 import { toast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Camera, Check, Loader2 } from "lucide-react"; // Ajout de AlertCircle
@@ -172,10 +173,10 @@ export const RegistrationSection = () => {
       {/* ARRIÈRE-PLAN */}
       <div className="absolute inset-0 z-0">
         <img
-          src="src/assets/paysagerencontre.png" 
-          alt="Fond TimaLove"
-          className="w-full h-full object-cover"
-        />
+                src={rencontreImg}
+                alt="Mariage TimaLove"
+                className="w-full h-full object-cover"
+              />
         <div className="absolute inset-0 bg-black/70 backdrop-blur-[2px]" />
       </div>
 

@@ -1,3 +1,4 @@
+import logo from "@/assets/logo.png"; // ✅ Import Vite direct
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,13 +8,12 @@ import {
 import { Menu, UserCircle, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Logo } from "./Logo";
 
 const navLinks = [
   { href: "/", label: "Accueil" },
   { href: "/qui-suis-je", label: "Qui suis-je ?" },
   { href: "#concept", label: "Comment ça marche" },
-  { href: "#temoignages", label: "Avis" }, // "Retour" devient "Avis"
+  { href: "#temoignages", label: "Avis" },
   { href: "#contact", label: "Contact" },
 ];
 
@@ -21,17 +21,21 @@ export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    // Réduction de la hauteur globale : h-14 sur mobile et h-16 sur desktop
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#FFF5F5]/90 backdrop-blur-md border-b border-rose-100/50 shadow-sm">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-14 md:h-16"> {/* Hauteur réduite ici */}
+        <div className="flex items-center justify-between h-14 md:h-16">
+
+          {/* ✅ LOGO PRODUCTION SAFE */}
           <Link to="/" className="hover:opacity-80 transition-opacity scale-90 origin-left">
-            {/* Le scale-90 permet de réduire légèrement le logo pour coller à la navbar plus fine */}
-            <Logo size="md" />
+            <img
+              src={logo}
+              alt="TimaLove Logo"
+              className="h-14 md:h-16 w-auto object-contain"
+            />
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-5 lg:gap-6"> {/* Gap réduit pour l'espace */}
+          <div className="hidden md:flex items-center gap-5 lg:gap-6">
             {navLinks.map((link) => (
               <a
                 key={link.label}
@@ -42,48 +46,49 @@ export const Navbar = () => {
               </a>
             ))}
 
-            {/* Menu Déroulant Profil */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="outline-none group bg-white/50 p-1 rounded-full border border-rose-100">
-                  <UserCircle 
-                    size={28} // Taille de l'icône réduite de 32 à 28
-                    className="text-primary transition-transform group-hover:scale-110 duration-200" 
+                  <UserCircle
+                    size={28}
+                    className="text-primary transition-transform group-hover:scale-110 duration-200"
                   />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-white/95 backdrop-blur-md border-rose-100 shadow-xl rounded-2xl">
+
+              <DropdownMenuContent
+                align="end"
+                className="w-48 bg-white/95 backdrop-blur-md border-rose-100 shadow-xl rounded-2xl"
+              >
                 <Link to="/login">
                   <DropdownMenuItem className="cursor-pointer focus:bg-rose-50 focus:text-primary py-2 text-sm">
                     Se connecter
                   </DropdownMenuItem>
                 </Link>
+
                 <a href="/#registration">
                   <DropdownMenuItem className="cursor-pointer focus:bg-rose-50 focus:text-primary font-medium py-2 text-sm">
                     S'inscrire
                   </DropdownMenuItem>
                 </a>
-                <DropdownMenuItem className="cursor-pointer focus:bg-rose-50 focus:text-primary font-medium py-2 text-sm">
-                  
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-3">
-             <UserCircle size={24} className="text-primary" /> {/* Taille réduite */}
-             <button
+            <UserCircle size={24} className="text-primary" />
+            <button
               className="p-1 text-slate-700"
               onClick={() => setIsOpen(!isOpen)}
               aria-label="Toggle menu"
             >
-              {isOpen ? <X size={20} /> : <Menu size={20} />} {/* Icônes réduites */}
+              {isOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Navigation Menu */}
+        {/* Mobile Navigation */}
         {isOpen && (
           <div className="md:hidden py-4 border-t border-rose-100 animate-fade-up bg-[#FFF5F5]">
             <div className="flex flex-col gap-3">
@@ -97,24 +102,26 @@ export const Navbar = () => {
                   {link.label}
                 </a>
               ))}
+
               <hr className="border-rose-100" />
+
               <div className="flex flex-col gap-2 pt-1">
-                  <Link 
-                    to="/login" // 👈 Changé de /profile à /login
-                    onClick={() => setIsOpen(false)} 
-                    className="text-primary italic font-medium py-1 px-2 text-sm text-center"
-                  >
-                    Se connecter
-                  </Link>
-                  
-                  <Link 
-                    to="#registration" // 👈 Utilise Link au lieu de <button> pour la navigation
-                    onClick={() => setIsOpen(false)}
-                    className="bg-primary text-white py-2 px-6 rounded-full font-bold text-center text-sm shadow-md hover:bg-primary/90 transition-colors"
-                  >
-                    S'inscrire
-                  </Link>
-                </div>
+                <Link
+                  to="/login"
+                  onClick={() => setIsOpen(false)}
+                  className="text-primary italic font-medium py-1 px-2 text-sm text-center"
+                >
+                  Se connecter
+                </Link>
+
+                <a
+                  href="/#registration"
+                  onClick={() => setIsOpen(false)}
+                  className="bg-primary text-white py-2 px-6 rounded-full font-bold text-center text-sm shadow-md hover:bg-primary/90 transition-colors"
+                >
+                  S'inscrire
+                </a>
+              </div>
             </div>
           </div>
         )}

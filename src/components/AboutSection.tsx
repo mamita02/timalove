@@ -1,6 +1,6 @@
+import TimaImg from "@/assets/Tima.png";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
-
 export const AboutSection = () => {
   return (
     <section id="about" className="py-20 bg-[#fdf8f4] overflow-hidden">
@@ -11,10 +11,10 @@ export const AboutSection = () => {
           <div className="w-full md:w-[55%] flex justify-center relative">
             <div className="relative">
               <div className="absolute -top-10 -right-10 w-48 h-48 bg-rose-200/10 rounded-full blur-3xl -z-10" />
-              <img 
-                src="src/assets/A PROPOS1Plan de travail 5.png" 
-                alt="Fatimata Ba - TimaLove" 
-                className="w-full h-auto max-h-[650px] object-contain relative z-10" 
+              <img
+                src={TimaImg}
+                alt="Mariage TimaLove"
+                className="w-full h-full object-cover"
               />
             </div>
           </div>
