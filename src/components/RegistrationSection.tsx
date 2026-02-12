@@ -148,6 +148,19 @@ export const RegistrationSection = () => {
 
         if (dbError) throw dbError;
 
+        // Créer une notification pour l'admin
+        try {
+          const { addNotification } = await import('@/lib/notifications');
+          addNotification(
+            'new_registration',
+            'Nouvelle inscription !',
+            `${data.firstName} ${data.lastName} vient de s'inscrire`,
+            { registrationId: authData.user.id }
+          );
+        } catch (notifError) {
+          console.log("Notification non créée (normal si admin pas ouvert)");
+        }
+
         toast({ 
           title: "Inscription réussie !", 
           description: "Bienvenue sur TimaLove." 

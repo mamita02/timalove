@@ -26,12 +26,23 @@ export interface RegistrationRecord extends RegistrationData {
   id: string;
   createdAt: string;
   updatedAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+  photoUrl?: string;
 }
 
 export interface SupabaseResponse<T = any> {
   success: boolean;
   data?: T;
   error?: string;
+}
+
+export interface ProfileLike {
+  id: string;
+  likerId: string;
+  likedId: string;
+  createdAt: string;
+  likerName?: string;
+  likedName?: string;
 }
 
 /// Récupération des clés avec une sécurité "fail-safe"
@@ -155,5 +166,151 @@ const mapRecord = (r: any): RegistrationRecord => ({
   createdAt: r.created_at,
   updatedAt: r.updated_at,
 });
+
+/**
+ * Obtenir les statistiques des inscriptions
+ */
+export const getRegistrationStats = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('registrations')
+      .select('status');
+
+    if (error) throw error;
+
+    const total = data?.length || 0;
+    const pending = data?.filter(r => r.status === 'pending').length || 0;
+    const approved = data?.filter(r => r.status === 'approved').length || 0;
+    const rejected = data?.filter(r => r.status === 'rejected').length || 0;
+
+    return {
+      success: true,
+      data: { total, pending, approved, rejected }
+    };
+  } catch (error) {
+    console.error('Erreur stats:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+      data: { total: 0, pending: 0, approved: 0, rejected: 0 }
+    };
+  }
+};
+
+/**
+ * FONCTIONS DE LIKES
+ */
+
+/**
+ * Liker un profil
+ */
+export const likeProfile = async (likerId: string, likedId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('profile_likes')
+      .insert([
+        {
+          liker_id: likerId,
+          liked_id: likedId,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error('Erreur like:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur lors du like',
+    };
+  }
+};
+
+/**
+ * Supprimer un like (unlike)
+ */
+export const unlikeProfile = async (likerId: string, likedId: string) => {
+  try {
+    const { error } = await supabase
+      .from('profile_likes')
+      .delete()
+      .match({ liker_id: likerId, liked_id: likedId });
+
+    if (error) throw error;
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error('Erreur unlike:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur lors du unlike',
+    };
+  }
+};
+
+/**
+ * Obtenir tous les likes pour l'admin (avec notifications)
+ */
+export const getAllLikes = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('profile_likes')
+      .select(`
+        id,
+        liker_id,
+        liked_id,
+        created_at,
+        liker:liker_id(first_name, last_name, email),
+        liked:liked_id(first_name, last_name, email)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error('Erreur get likes:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur lors de la récupération des likes',
+    };
+  }
+};
+
+/**
+ * Obtenir le nombre de likes d'un profil
+ */
+export const getProfileLikesCount = async (profileId: string) => {
+  try {
+    const { count, error } = await supabase
+      .from('profile_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('liked_id', profileId);
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      data: count || 0,
+    };
+  } catch (error) {
+    console.error('Erreur count likes:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur lors du comptage des likes',
+    };
+  }
+};
 
 export default supabase;

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CreditCard } from "lucide-react";
+import { CreditCard, Sparkles } from "lucide-react";
 
 import {
   ChevronRight,
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { NotificationCenter } from "./NotificationCenter";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -39,7 +40,12 @@ const menuItems = [
   icon: CreditCard,
   description: "Historique des paiements",
  },
-
+  {
+    title: "Matching",
+    href: "/admin/matching",
+    icon: Sparkles,
+    description: "Créer des rencontres",
+  },
   // --- AJOUT DEBUT ---
   {
     title: "Avis",
@@ -76,13 +82,16 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
             <Heart className="h-6 w-6 text-primary" />
             <span className="font-serif text-xl font-semibold">TimaLove</span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            {sidebarOpen ? <X /> : <Menu />}
-          </Button>
+          <div className="flex items-center gap-2">
+            <NotificationCenter />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              {sidebarOpen ? <X /> : <Menu />}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -91,10 +100,11 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         {/* Logo */}
         <div className="flex h-16 items-center gap-2 border-b px-6">
           <Heart className="h-6 w-6 text-primary" />
-          <div>
+          <div className="flex-1">
             <h1 className="font-serif text-xl font-semibold">TimaLove</h1>
             <p className="text-xs text-muted-foreground">Administration</p>
           </div>
+          <NotificationCenter />
         </div>
 
         {/* Navigation */}

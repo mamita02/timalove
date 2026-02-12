@@ -17,7 +17,8 @@ import UserProfile from "./pages/UserProfile";
 import AdminInscriptions from "./pages/AdminInscriptions";
 import { AdminPaiements } from "./pages/AdminPaiements";
 import { AdminReviews } from "./pages/AdminReviews";
-import { AdminSettings } from "./pages/AdminSettings"; // <--- 1. AJOUT ICI
+import { AdminSettings } from "./pages/AdminSettings";
+import Matching from "./pages/Matching";
 
 const queryClient = new QueryClient();
 
@@ -46,8 +47,7 @@ const App = () => (
           <Route path="/admin/inscriptions" element={<AdminInscriptions />} />
           <Route path="/admin/paiements" element={<AdminPaiements />} />
           <Route path="/admin/avis" element={<AdminReviews />} />
-          
-          {/* 2. AJOUT DE LA ROUTE PARAMÈTRES ICI */}
+          <Route path="/admin/matching" element={<Matching />} />
           <Route path="/admin/parametres" element={<AdminSettings />} />
           
           {/* 404 - Toujours en dernier */}
