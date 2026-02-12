@@ -1,4 +1,3 @@
-import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -58,7 +57,7 @@ export const AdminSettings = () => {
   };
 
   return (
-    <AdminLayout>
+    
       <div className="space-y-6 p-6 min-h-screen bg-[#FDFBFB]">
         
         {/* Titre */}
@@ -143,6 +142,6 @@ export const AdminSettings = () => {
 
         </div>
       </div>
-    </AdminLayout>
+    
   );
 };

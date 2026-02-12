@@ -336,13 +336,13 @@ export const RegistrationSection = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
                     <FormField control={form.control} name="presentation" render={({ field }) => (
                       <FormItem className="space-y-1">
-                        <Label className="text-[10px] uppercase text-slate-400 ml-1">Moi en quelques mots</Label>
+                        <Label className="text-[10px] uppercase text-slate-400 ml-1">Moi en quelques mots "50 caractères minimum"</Label>
                         <FormControl><Textarea placeholder="..." className="min-h-[80px] border-slate-200 rounded-xl text-sm" {...field} /></FormControl>
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="lookingFor" render={({ field }) => (
                       <FormItem className="space-y-1">
-                        <Label className="text-[10px] uppercase text-slate-400 ml-1">Mon partenaire idéal</Label>
+                        <Label className="text-[10px] uppercase text-slate-400 ml-1">Mon partenaire idéal"30 caractères minimum"</Label>
                         <FormControl><Textarea placeholder="..." className="min-h-[80px] border-slate-200 rounded-xl text-sm" {...field} /></FormControl>
                       </FormItem>
                     )} />

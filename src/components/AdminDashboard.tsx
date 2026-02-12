@@ -102,7 +102,7 @@ const [transactions, setTransactions] = useState<any[]>([]);
       });
 
       // 3. On redirige vers la page de connexion
-      navigate("/login"); 
+      navigate("/"); 
       
     } catch (error) {
       console.error("Erreur:", error);
@@ -330,14 +330,23 @@ const [transactions, setTransactions] = useState<any[]>([]);
                   {filteredRegistrations.map((reg) => (
                     <TableRow key={reg.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedReg(reg)}>
                       <TableCell>
-                        <div className="w-10 h-10 rounded-full bg-muted overflow-hidden border">
-                          {reg.photo_url ? (
-                            <img src={reg.photo_url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <User className="w-full h-full p-2 text-muted-foreground" />
-                          )}
-                        </div>
-                      </TableCell>
+                      <div className="w-10 h-10 rounded-full bg-muted overflow-hidden border flex items-center justify-center">
+                        {/* On vérifie spécifiquement le champ photo_url de ton profil */}
+                        {reg.photo_url ? (
+                          <img 
+                            src={reg.photo_url} 
+                            alt="Profil" 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // Sécurité : si l'URL est brisée, on cache l'image pour montrer l'icône User
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <User className="w-full h-full p-2 text-muted-foreground" />
+                        )}
+                      </div>
+                    </TableCell>
                       <TableCell className="font-medium">
                       {reg.firstName} {reg.lastName}
                      </TableCell>

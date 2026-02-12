@@ -20,6 +20,10 @@ export interface RegistrationData {
   profession?: string;
   presentation: string;
   lookingFor: string;
+  // AJOUTE CES LIGNES :
+  photo_url?: string;
+  photo_url_2?: string;
+  photo_url_3?: string;
 }
 
 export interface RegistrationRecord extends RegistrationData {
@@ -76,6 +80,7 @@ export const createRegistration = async (
       profession: data.profession || null,
       presentation: data.presentation,
       looking_for: data.lookingFor,
+      photo_url: data.photo_url,
     };
 
     const { data: registration, error } = await supabase
@@ -154,6 +159,10 @@ const mapRecord = (r: any): RegistrationRecord => ({
   lookingFor: r.looking_for,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
+  // AJOUTE CES 3 LIGNES ICI :
+  photo_url: r.photo_url,
+  photo_url_2: r.photo_url_2,
+  photo_url_3: r.photo_url_3,
 });
 
 export default supabase;

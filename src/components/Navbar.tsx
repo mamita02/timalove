@@ -1,4 +1,4 @@
-import logo from "@/assets/logo.png"; // ✅ Import Vite direct
+import logo from "@/assets/logo.png";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,9 +12,9 @@ import { Link } from "react-router-dom";
 const navLinks = [
   { href: "/", label: "Accueil" },
   { href: "/qui-suis-je", label: "Qui suis-je ?" },
-  { href: "#concept", label: "Comment ça marche" },
-  { href: "#temoignages", label: "Avis" },
-  { href: "#contact", label: "Contact" },
+  { href: "/?scroll=concept", label: "Comment ça marche" },
+  { href: "/?scroll=temoignages", label: "Avis" },
+  { href: "/?scroll=contact", label: "Contact" },
 ];
 
 export const Navbar = () => {
@@ -25,8 +25,11 @@ export const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-14 md:h-16">
 
-          {/* ✅ LOGO PRODUCTION SAFE */}
-          <Link to="/" className="hover:opacity-80 transition-opacity scale-90 origin-left">
+          {/* LOGO */}
+          <Link
+            to="/"
+            className="hover:opacity-80 transition-opacity scale-90 origin-left"
+          >
             <img
               src={logo}
               alt="TimaLove Logo"
@@ -37,13 +40,13 @@ export const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-5 lg:gap-6">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.label}
-                href={link.href}
+                to={link.href}
                 className="text-xs lg:text-sm font-medium text-slate-600 hover:text-primary transition-colors duration-300"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
 
             <DropdownMenu>
@@ -66,11 +69,11 @@ export const Navbar = () => {
                   </DropdownMenuItem>
                 </Link>
 
-                <a href="/#registration">
+                <Link to="/?scroll=registration">
                   <DropdownMenuItem className="cursor-pointer focus:bg-rose-50 focus:text-primary font-medium py-2 text-sm">
                     S'inscrire
                   </DropdownMenuItem>
-                </a>
+                </Link>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -93,14 +96,14 @@ export const Navbar = () => {
           <div className="md:hidden py-4 border-t border-rose-100 animate-fade-up bg-[#FFF5F5]">
             <div className="flex flex-col gap-3">
               {navLinks.map((link) => (
-                <a
+                <Link
                   key={link.label}
-                  href={link.href}
+                  to={link.href}
                   className="text-sm font-medium text-slate-600 hover:text-primary transition-colors py-1 px-2"
                   onClick={() => setIsOpen(false)}
                 >
                   {link.label}
-                </a>
+                </Link>
               ))}
 
               <hr className="border-rose-100" />
@@ -114,13 +117,13 @@ export const Navbar = () => {
                   Se connecter
                 </Link>
 
-                <a
-                  href="/#registration"
+                <Link
+                  to="/?scroll=registration"
                   onClick={() => setIsOpen(false)}
                   className="bg-primary text-white py-2 px-6 rounded-full font-bold text-center text-sm shadow-md hover:bg-primary/90 transition-colors"
                 >
                   S'inscrire
-                </a>
+                </Link>
               </div>
             </div>
           </div>

@@ -1,13 +1,12 @@
-import { AdminLayout } from "@/components/admin/AdminLayout"; // Import est déjà là, c'est bien
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -64,7 +63,7 @@ export const AdminReviews = () => {
 
   return (
     // --- AJOUT ICI : On enveloppe tout dans AdminLayout ---
-    <AdminLayout>
+    
       <div className="space-y-6 p-6 min-h-screen bg-[#FDFBFB]">
         {/* HEADER */}
         <div>
@@ -167,7 +166,7 @@ export const AdminReviews = () => {
           </CardContent>
         </Card>
       </div>
-    </AdminLayout> 
+    
     // --- FIN AJOUT ---
   );
 };
