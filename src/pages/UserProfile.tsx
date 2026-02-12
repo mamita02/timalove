@@ -42,45 +42,68 @@ const UserProfile = () => {
   const [showEditPhotos, setShowEditPhotos] = useState(false);
   const [myPhotos, setMyPhotos] = useState({ photo_url: null, photo_url_2: null, photo_url_3: null });
 
-  useEffect(() => {
-    const initializeProfile = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) {
-          window.location.href = '/login';
-          return;
-        }
-        
-        const user = session.user;
-        setSessionUser(user);
+ useEffect(() => {
+  const initializeProfile = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
 
-        const { data: profile } = await supabase.from('registrations').select('gender, photo_url, photo_url_2, photo_url_3').eq('id', user.id).single();
-        const { data: subscriptionData } = await supabase.from('profiles').select('subscription_status, subscription_end_date').eq('id', user.id).single();
-
-        if (profile) {
-          const isFemale = profile.gender?.toLowerCase().startsWith('f');
-          setUserSexe(isFemale ? 'femme' : 'homme');
-          
-          const isPremium = subscriptionData?.subscription_status === 'active' && 
-                            subscriptionData?.subscription_end_date && 
-                            new Date(subscriptionData.subscription_end_date) > new Date();
-          
-          setHasPaid(isFemale || isPremium);
-          setMyPhotos({ photo_url: profile.photo_url, photo_url_2: profile.photo_url_2, photo_url_3: profile.photo_url_3 });
-        }
-        fetchNotifications(user.id);
-      } catch (err) { 
-        console.error("Erreur init:", err); 
-      } finally { 
-        setLoading(false); 
+      if (!session?.user) {
+        window.location.href = '/login';
+        return;
       }
-    };
-    initializeProfile();
-  }, []);
+
+      const user = session.user;
+      setSessionUser(user);
+
+      // 🔥 Récupération profil
+      const { data: profile } = await supabase
+        .from('registrations')
+        .select('gender, photo_url, photo_url_2, photo_url_3')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile) return;
+
+      const isFemale = profile.gender?.toLowerCase().startsWith('f');
+      const sexe = isFemale ? 'femme' : 'homme';
+      setUserSexe(sexe);
+
+      setMyPhotos({
+        photo_url: profile.photo_url,
+        photo_url_2: profile.photo_url_2,
+        photo_url_3: profile.photo_url_3
+      });
+
+      // 🔥 Vérification abonnement immédiate
+      const { data: subscriptionData } = await supabase
+        .from('profiles')
+        .select('subscription_status, subscription_end_date')
+        .eq('id', user.id)
+        .single();
+
+      const isPremium =
+        subscriptionData?.subscription_status === 'active' &&
+        subscriptionData?.subscription_end_date &&
+        new Date(subscriptionData.subscription_end_date) > new Date();
+
+      setHasPaid(isFemale || isPremium);
+
+      fetchNotifications(user.id);
+
+    } catch (err) {
+      console.error("Erreur init:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  initializeProfile();
+}, []);
+
 
   // Ajoute cet useEffect dans UserProfile.tsx juste après le premier
 useEffect(() => {
-  if (!sessionUser) return;
+  if (!sessionUser || !userSexe) return;
 
   const checkSubscription = async () => {
     const { data } = await supabase
@@ -89,27 +112,20 @@ useEffect(() => {
       .eq("id", sessionUser.id)
       .single();
 
-    if (data) {
-      const isPremium =
-        data.subscription_status === "active" &&
-        data.subscription_end_date &&
-        new Date(data.subscription_end_date) > new Date();
+    if (!data) return;
 
-      setHasPaid(isPremium || userSexe === "femme");
-    }
+    const isPremium =
+      data.subscription_status === "active" &&
+      data.subscription_end_date &&
+      new Date(data.subscription_end_date) > new Date();
+
+    setHasPaid(userSexe === "femme" || isPremium);
   };
 
-  // 🔥 Vérifie au chargement
   checkSubscription();
 
-  // 🔥 Vérifie toutes les 5 secondes pendant 30 secondes
-  const interval = setInterval(checkSubscription, 5000);
+}, [sessionUser, userSexe]);
 
-  // Stop après 30 secondes
-  setTimeout(() => clearInterval(interval), 30000);
-
-  return () => clearInterval(interval);
-}, [sessionUser]);
 
 
   const fetchNotifications = async (userId: string) => {

@@ -91,9 +91,14 @@ export const MemberGallery = ({ forceShowNet, targetSexe, filters }: MemberGalle
     };
 
     fetchProfiles();
-  }, [targetSexe, currentPage, filters]);
+  }, [targetSexe, currentPage, filters?.country, filters?.religion, filters?.ageRange]);
 
-  const showNetFinal = forceShowNet;
+  const [showNetFinal, setShowNetFinal] = useState(forceShowNet);
+
+useEffect(() => {
+  setShowNetFinal(forceShowNet);
+}, [forceShowNet]);
+
 
   const displayedMembers = showNetFinal ? members : members.slice(0, 3);
 
@@ -140,37 +145,47 @@ export const MemberGallery = ({ forceShowNet, targetSexe, filters }: MemberGalle
   };
 
   const handleUnlockPayment = async () => {
-    try {
-      setPaymentLoading(true);
+  try {
+    setPaymentLoading(true);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({ title: "Utilisateur non connecté", variant: "destructive" });
-        setPaymentLoading(false);
-        return;
-      }
+    const { data: { user } } = await supabase.auth.getUser();
 
-      const { data, error } = await supabase.functions.invoke("naboo-create", {
-        body: { userId: user.id }
-      });
-
-      if (error) throw new Error(error.message);
-
-      const parsed = typeof data === "string" ? JSON.parse(data) : data;
-
-      if (!parsed?.url) throw new Error("URL manquante");
-
-      window.location.href = parsed.url;
-
-    } catch (err: any) {
+    if (!user) {
       toast({
-        title: "Erreur paiement",
-        description: err.message,
+        title: "Utilisateur non connecté",
         variant: "destructive"
       });
       setPaymentLoading(false);
+      return;
     }
-  };
+
+    const { data, error } = await supabase.functions.invoke("naboo-create", {
+      body: { userId: user.id }
+    });
+
+    if (error) throw new Error(error.message);
+
+    const parsed = typeof data === "string" ? JSON.parse(data) : data;
+
+    if (!parsed?.url) {
+      setPaymentLoading(false);
+      throw new Error("URL manquante");
+    }
+
+    // 🔥 Redirection vers Naboo
+    window.location.href = parsed.url;
+    return; // 👈 on stoppe proprement la fonction ici
+
+  } catch (err: any) {
+    toast({
+      title: "Erreur paiement",
+      description: err.message,
+      variant: "destructive"
+    });
+    setPaymentLoading(false);
+  }
+};
+
 
   if (loading) {
     return (
