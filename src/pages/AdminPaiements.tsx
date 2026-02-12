@@ -34,35 +34,44 @@ export const AdminPaiements = () => {
   // 🔹 Chargement des données avec jointure pour avoir les NOMS
  const loadData = async () => {
   setLoading(true);
+
   try {
-    // 1. Récupérer les transactions
-    const { data: txData, error: txError } = await supabase
+    const { data, error } = await supabase
       .from("transactions")
-      .select("*")
+      .select(`
+        id,
+        amount,
+        status,
+        created_at,
+        user_id,
+        profiles (
+          subscription_end_date
+        ),
+        registrations (
+          first_name,
+          last_name
+        )
+      `)
       .order("created_at", { ascending: false });
 
-    if (txError) throw txError;
+    if (error) throw error;
 
-    // 2. Récupérer les profils (pour les noms ET les dates de fin)
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, first_name, last_name, subscription_end_date");
+    const enriched = data?.map((tx: any) => {
+  const registration = tx.registrations?.[0];
+  const profile = tx.profiles?.[0];
 
-    if (profileError) throw profileError;
+  return {
+    ...tx,
+    userName: registration
+      ? `${registration.first_name || ""} ${registration.last_name || ""}`.trim()
+      : "Utilisateur inconnu",
+    subscriptionEnd: profile?.subscription_end_date
+  };
+});
 
-    // 3. Fusionner manuellement sans dépendre d'une jointure complexe
-    const enriched = txData?.map(tx => {
-      const profile = profileData?.find(p => p.id === tx.user_id);
-      return {
-        ...tx,
-        userName: profile
-          ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || "Sans nom"
-          : "Utilisateur inconnu",
-        subscriptionEnd: profile?.subscription_end_date
-      };
-    });
 
     setTransactions(enriched || []);
+
   } catch (err) {
     console.error("Erreur AdminPaiements:", err);
     toast({
@@ -74,6 +83,7 @@ export const AdminPaiements = () => {
     setLoading(false);
   }
 };
+
   useEffect(() => {
     loadData();
   }, []);
