@@ -32,46 +32,48 @@ export const AdminPaiements = () => {
   const [filterExpiringSoon, setFilterExpiringSoon] = useState(false);
 
   // 🔹 Chargement des données avec jointure pour avoir les NOMS
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // 1. Récupérer les transactions + Nom/Prénom depuis la table registrations
-      const { data: txData, error: txError } = await supabase
-        .from("transactions")
-        .select(`
-          *,
-          registrations:user_id (first_name, last_name)
-        `)
-        .order("created_at", { ascending: false });
+ const loadData = async () => {
+  setLoading(true);
+  try {
+    // 1. Récupérer les transactions
+    const { data: txData, error: txError } = await supabase
+      .from("transactions")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-      if (txError) throw txError;
+    if (txError) throw txError;
 
-      // 2. Récupérer les dates de fin d'abonnement depuis profiles
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("id, subscription_end_date");
+    // 2. Récupérer les profils (pour les noms ET les dates de fin)
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, first_name, last_name, subscription_end_date");
 
-      // 3. Fusionner les données pour enrichir l'affichage
-      const enriched = txData?.map(tx => {
-        const profile = profileData?.find(p => p.id === tx.user_id);
-        return {
-          ...tx,
-          userName: tx.registrations 
-            ? `${tx.registrations.first_name} ${tx.registrations.last_name}` 
-            : "Utilisateur inconnu",
-          subscriptionEnd: profile?.subscription_end_date
-        };
-      });
+    if (profileError) throw profileError;
 
-      setTransactions(enriched || []);
-    } catch (err) {
-      console.error(err);
-      toast({ title: "Erreur", description: "Chargement impossible", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
+    // 3. Fusionner manuellement sans dépendre d'une jointure complexe
+    const enriched = txData?.map(tx => {
+      const profile = profileData?.find(p => p.id === tx.user_id);
+      return {
+        ...tx,
+        userName: profile
+          ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || "Sans nom"
+          : "Utilisateur inconnu",
+        subscriptionEnd: profile?.subscription_end_date
+      };
+    });
 
+    setTransactions(enriched || []);
+  } catch (err) {
+    console.error("Erreur AdminPaiements:", err);
+    toast({
+      title: "Erreur de connexion",
+      description: "Impossible de récupérer les données de la base.",
+      variant: "destructive"
+    });
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
     loadData();
   }, []);
