@@ -80,33 +80,38 @@ const UserProfile = () => {
 
   // Ajoute cet useEffect dans UserProfile.tsx juste après le premier
 useEffect(() => {
-  const refreshStatus = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      const { data: subscriptionData } = await supabase
-        .from('profiles')
-        .select('subscription_status, subscription_end_date')
-        .eq('id', session.user.id)
-        .single();
+  if (!sessionUser) return;
 
-      const isPremium = subscriptionData?.subscription_status === 'active' && 
-                        new Date(subscriptionData.subscription_end_date) > new Date();
-      
-      // On met à jour l'état local
-      if (isPremium) setHasPaid(true);
+  const checkSubscription = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("subscription_status, subscription_end_date")
+      .eq("id", sessionUser.id)
+      .single();
+
+    if (data) {
+      const isPremium =
+        data.subscription_status === "active" &&
+        data.subscription_end_date &&
+        new Date(data.subscription_end_date) > new Date();
+
+      setHasPaid(isPremium || userSexe === "femme");
     }
   };
 
-  // On vérifie quand l'utilisateur revient sur l'onglet (après son paiement Naboo)
-  const handleVisibilityChange = () => {
-    if (document.visibilityState === 'visible') {
-      refreshStatus();
-    }
-  };
+  // 🔥 Vérifie au chargement
+  checkSubscription();
 
-  document.addEventListener('visibilitychange', handleVisibilityChange);
-  return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-}, []);
+  // 🔥 Vérifie toutes les 5 secondes pendant 30 secondes
+  const interval = setInterval(checkSubscription, 5000);
+
+  // Stop après 30 secondes
+  setTimeout(() => clearInterval(interval), 30000);
+
+  return () => clearInterval(interval);
+}, [sessionUser]);
+
+
   const fetchNotifications = async (userId: string) => {
     const { count } = await supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('to_user_id', userId).eq('is_read', false);
     if (count !== null) setUnreadCount(count);
