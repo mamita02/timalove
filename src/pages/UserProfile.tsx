@@ -262,8 +262,8 @@ useEffect(() => {
         {userSexe === 'homme' && !hasPaid && (
           <div className="mb-10 bg-slate-900 rounded-[2.5rem] p-8 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
             <div>
-              <h2 className="text-2xl font-serif mb-2 text-rose-200">Accès Premium</h2>
-              <p className="text-slate-400 text-sm">Débloquez les photos et les profils illimités.</p>
+              <h2 className="text-2xl font-serif mb-2 text-rose-200">Accès Premium à 50 € / 32 800 FCFA</h2>
+              <p className="text-slate-400 text-sm">Débloquez les photos et les profils illimités. </p>
             </div>
             <SubscriptionButton userId={sessionUser?.id} />
           </div>

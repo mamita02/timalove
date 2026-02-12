@@ -63,7 +63,7 @@ const SubscriptionButton = ({ userId }: SubscriptionButtonProps) => {
           Chargement...
         </span>
       ) : (
-        "S'abonner – 5000 FCFA"
+        "S'abonner – 50 € / 32 800  FCFA"
       )}
     </Button>
   );
