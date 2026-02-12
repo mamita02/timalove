@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Gestion du preflight CORS
+  // 1. Gestion du preflight CORS
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -15,78 +15,85 @@ serve(async (req) => {
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  )
+  );
 
   try {
-    const payload = await req.json()
-    console.log("🔔 Webhook Naboo reçu :", JSON.stringify(payload))
+    // 2. Récupération du payload (Naboo envoie du JSON)
+    const payload = await req.json();
+    console.log("🔔 Webhook Naboo reçu :", JSON.stringify(payload));
 
-    // Note : Vérifie bien que Naboo envoie 'order_id' et 'transaction_status' dans le body
-    const { order_id, transaction_status, status } = payload
-    
-    // Certains systèmes utilisent 'status' au lieu de 'transaction_status'
-    const finalStatus = transaction_status || status;
+    // Naboo V2 utilise souvent 'order_id' et 'status'
+    const { order_id, transaction_status, status } = payload;
+    const finalStatus = (transaction_status || status || "").toLowerCase();
 
-    if (finalStatus === "paid" || finalStatus === "success") {
+    // 3. On ne traite que si le paiement est un succès
+    if (finalStatus === "paid" || finalStatus === "success" || finalStatus === "done") {
       
-      // 1. Retrouver l'utilisateur
+      // Trouver la transaction correspondante
       const { data: transaction, error: txError } = await supabase
-         .from('transactions')
-         .select('user_id')
-         .eq('order_id', order_id)
-         .maybeSingle(); // Plus sûr que .single() pour éviter de crash si pas trouvé
+        .from('transactions')
+        .select('user_id, status')
+        .eq('order_id', order_id)
+        .maybeSingle();
       
       if (txError || !transaction) {
-          console.error(`❌ Transaction introuvable pour order_id: ${order_id}`);
-          return new Response(JSON.stringify({ error: "Order not found" }), { status: 200 });
+        console.error(`❌ Transaction introuvable pour order_id: ${order_id}`);
+        return new Response(JSON.stringify({ error: "Order not found" }), { status: 200 }); // On répond 200 pour que Naboo arrête d'envoyer
+      }
+
+      // Éviter de traiter deux fois la même transaction
+      if (transaction.status === 'paid') {
+        console.log("ℹ️ Transaction déjà traitée.");
+        return new Response(JSON.stringify({ message: "Already processed" }), { status: 200 });
       }
 
       const userId = transaction.user_id;
 
-      // 2. Calculer la date de fin (Aujourd'hui + 3 mois)
-      const now = new Date();
+      // 4. Calcul de la date de fin (Aujourd'hui + 3 mois)
       const newEndDate = new Date();
-      newEndDate.setMonth(now.getMonth() + 3);
+      newEndDate.setMonth(newEndDate.getMonth() + 3);
 
-      // Sécurité : Si le mois de destination n'a pas assez de jours (ex: 31 Mai -> 31 Février n'existe pas)
-      // JS passe au mois suivant, ce qui est correct, mais on s'assure d'avoir un format ISO propre.
-      const isoEndDate = newEndDate.toISOString();
+      console.log(`🚀 Activation Premium pour ${userId} jusqu'au ${newEndDate.toISOString()}`);
 
-      console.log(`🚀 Activation Premium pour ${userId} jusqu'au ${isoEndDate}`);
-
-      // 3. Mise à jour du profil et de la transaction en une "pseudo-transaction"
-      // On met à jour le profil
+      // 5. Mise à jour atomique : Profil + Transaction
+      // Mise à jour du profil
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
           subscription_status: "active",
-          subscription_end_date: isoEndDate,
+          subscription_end_date: newEndDate.toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq("id", userId);
 
       if (profileError) throw profileError;
 
-      // 4. On marque la transaction comme terminée
-      await supabase
+      // Mise à jour du statut de la transaction
+      const { error: updateTxError } = await supabase
         .from("transactions")
-        .update({ status: 'paid', updated_at: new Date().toISOString() })
+        .update({ 
+          status: 'paid', 
+          updated_at: new Date().toISOString() 
+        })
         .eq('order_id', order_id);
 
-      return new Response(JSON.stringify({ message: "Abonnement activé" }), { 
+      if (updateTxError) throw updateTxError;
+
+      return new Response(JSON.stringify({ message: "Abonnement activé avec succès" }), { 
         headers: { ...corsHeaders, "Content-Type": "application/json" }, 
         status: 200 
       });
+    } else {
+      console.log(`⚠️ Statut ignoré : ${finalStatus}`);
+      return new Response(JSON.stringify({ message: "Statut non traité" }), { status: 200 });
     }
-
-    return new Response(JSON.stringify({ message: "Statut non traité" }), { status: 200 });
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erreur inconnue";
-    console.error("❌ Erreur Webhook:", msg);
+    console.error("❌ Erreur Webhook détaillée:", msg);
     return new Response(JSON.stringify({ error: msg }), { 
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400 
     });
   }
-})
+});

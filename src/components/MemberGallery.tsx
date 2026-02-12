@@ -201,7 +201,7 @@ export const MemberGallery = ({ forceShowNet, targetSexe, filters }: MemberGalle
     return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#EAB308]" size={40} /></div>;
   }
 // On affiche tout si Premium, sinon seulement les 3 premiers
-const displayedMembers = showNetFinal ? members : members.slice(0, 3);
+
 
 
 const handleUnlockPayment = async () => {
@@ -251,6 +251,9 @@ const handleUnlockPayment = async () => {
     setPaymentLoading(false);
   }
 };
+  // On définit displayedMembers juste avant le return pour qu'il bascule entre "les 3 premiers" et "tous"
+  const displayedMembers = showNetFinal ? members : members.slice(0, 3);
+
   return (
     <div className="space-y-12">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
@@ -345,9 +348,9 @@ const handleUnlockPayment = async () => {
           <p className="text-slate-500 text-center mt-2 max-w-md">
             Débloquez l'accès complet pour voir tous les profils et trouver votre moitié.
           </p>
-                    <Button 
-            onClick={handleUnlockPayment} // <-- On change navigate par la fonction de paiement
-            disabled={paymentLoading}     // <-- On désactive si ça charge
+          <Button 
+            onClick={handleUnlockPayment}
+            disabled={paymentLoading}
             className="mt-6 h-14 px-10 bg-rose-500 hover:bg-rose-600 text-white font-bold text-lg rounded-2xl shadow-lg transition-all hover:scale-105"
           >
             {paymentLoading ? (

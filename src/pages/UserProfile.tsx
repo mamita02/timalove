@@ -78,6 +78,35 @@ const UserProfile = () => {
     initializeProfile();
   }, []);
 
+  // Ajoute cet useEffect dans UserProfile.tsx juste après le premier
+useEffect(() => {
+  const refreshStatus = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const { data: subscriptionData } = await supabase
+        .from('profiles')
+        .select('subscription_status, subscription_end_date')
+        .eq('id', session.user.id)
+        .single();
+
+      const isPremium = subscriptionData?.subscription_status === 'active' && 
+                        new Date(subscriptionData.subscription_end_date) > new Date();
+      
+      // On met à jour l'état local
+      if (isPremium) setHasPaid(true);
+    }
+  };
+
+  // On vérifie quand l'utilisateur revient sur l'onglet (après son paiement Naboo)
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      refreshStatus();
+    }
+  };
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+}, []);
   const fetchNotifications = async (userId: string) => {
     const { count } = await supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('to_user_id', userId).eq('is_read', false);
     if (count !== null) setUnreadCount(count);
