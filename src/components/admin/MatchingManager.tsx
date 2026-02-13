@@ -244,15 +244,6 @@ export const MatchingManager = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-serif font-semibold tracking-tight">
-          Matching
-        </h2>
-        <p className="text-muted-foreground mt-2">
-          Créer des rencontres entre les membres approuvés
-        </p>
-      </div>
-
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Formulaire de création */}
         <Card>
