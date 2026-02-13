@@ -37,10 +37,10 @@ export const generateGoogleMeetLink = (
  * Créer un événement Google Calendar
  */
 export const createGoogleCalendarEvent = (
-  manName: string,
-  womanName: string,
-  manEmail: string,
-  womanEmail: string,
+  recipientName: string,
+  partnerName: string,
+  recipientEmail: string,
+  partnerEmail: string,
   date: string,
   meetLink: string
 ) => {
@@ -52,15 +52,16 @@ export const createGoogleCalendarEvent = (
     return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   };
 
-  const title = encodeURIComponent('Rencontre TimaLove Match');
+  const title = encodeURIComponent(`Rencontre TimaLove Match avec ${partnerName}`);
   const details = encodeURIComponent(
-    `Rencontre organisée entre ${manName} et ${womanName} via TimaLove Match.\n\nLien Google Meet: ${meetLink}`
+    `Bonjour ${recipientName},\n\nVotre rencontre avec ${partnerName} est planifiée !\n\nLien Google Meet: ${meetLink}\n\nÀ bientôt !\nL'équipe TimaLove Match`
   );
   const location = encodeURIComponent(meetLink);
   const dates = `${formatDate(eventDate)}/${formatDate(endDate)}`;
+  const guests = encodeURIComponent(partnerEmail);
 
-  // URL pour ajouter à Google Calendar
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+  // URL pour ajouter à Google Calendar avec les invités
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}&add=${guests}`;
 };
 
 /**
