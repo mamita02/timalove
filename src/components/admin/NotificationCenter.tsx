@@ -1,16 +1,5 @@
-import { useState, useEffect } from "react";
-import {
-  getNotifications,
-  getUnreadCount,
-  subscribeToNotifications,
-  markAsRead,
-  markAllAsRead,
-  removeNotification,
-  startNotificationPolling,
-  type Notification,
-} from "@/lib/notifications";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -19,8 +8,17 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Bell, Check, CheckCheck, Trash2, UserPlus, Users, Info } from "lucide-react";
+import {
+  getNotifications,
+  markAllAsRead,
+  markAsRead,
+  removeNotification,
+  type Notification
+} from "@/lib/notifications";
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { Bell, Check, CheckCheck, Info, Trash2, UserPlus, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export const NotificationCenter = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -28,24 +26,34 @@ export const NotificationCenter = () => {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    // Charger les notifications initiales
-    setNotifications(getNotifications());
-    setUnreadCount(getUnreadCount());
+  const loadNotifications = async () => {
+    const data = await getNotifications();
+    setNotifications(data);
+    setUnreadCount(data.filter((n) => !n.read).length);
+  };
 
-    // S'abonner aux changements
-    const unsubscribe = subscribeToNotifications((newNotifications) => {
-      setNotifications(newNotifications);
-      setUnreadCount(newNotifications.filter((n) => !n.read).length);
-    });
+  loadNotifications();
 
-    // Démarrer la surveillance
-    const stopPolling = startNotificationPolling();
+  const channel = supabase
+    .channel("notifications")
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "notifications" },
+      async () => {
+        const data = await getNotifications();
+        setNotifications(data);
+        setUnreadCount(data.filter((n) => !n.read).length);
+      }
+    )
+    .subscribe();
 
-    return () => {
-      unsubscribe();
-      stopPolling();
-    };
-  }, []);
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, []);
+
+
+
 
   const handleMarkAsRead = (id: string) => {
     markAsRead(id);
@@ -60,30 +68,46 @@ export const NotificationCenter = () => {
   };
 
   const getIcon = (type: Notification['type']) => {
-    switch (type) {
-      case 'new_registration':
-        return <UserPlus className="h-4 w-4" />;
-      case 'new_match':
-        return <Users className="h-4 w-4" />;
-      case 'meeting_confirmed':
-        return <Check className="h-4 w-4" />;
-      default:
-        return <Info className="h-4 w-4" />;
-    }
-  };
+  switch (type) {
+    case 'new_registration':
+      return <UserPlus className="h-4 w-4" />;
+    case 'new_match':
+      return <Users className="h-4 w-4" />;
+    case 'meeting_confirmed':
+      return <Check className="h-4 w-4" />;
+
+    case 'admin_like':
+      return <Bell className="h-4 w-4" />;
+
+    case 'admin_request_received':
+      return <UserPlus className="h-4 w-4" />;
+
+    default:
+      return <Info className="h-4 w-4" />;
+  }
+};
+
 
   const getColor = (type: Notification['type']) => {
-    switch (type) {
-      case 'new_registration':
-        return 'bg-blue-100 text-blue-600';
-      case 'new_match':
-        return 'bg-pink-100 text-pink-600';
-      case 'meeting_confirmed':
-        return 'bg-green-100 text-green-600';
-      default:
-        return 'bg-gray-100 text-gray-600';
-    }
-  };
+  switch (type) {
+    case 'new_registration':
+      return 'bg-blue-100 text-blue-600';
+    case 'new_match':
+      return 'bg-pink-100 text-pink-600';
+    case 'meeting_confirmed':
+      return 'bg-green-100 text-green-600';
+
+    case 'admin_like':
+      return 'bg-purple-100 text-purple-600';
+
+    case 'admin_request_received':
+      return 'bg-orange-100 text-orange-600';
+
+    default:
+      return 'bg-gray-100 text-gray-600';
+  }
+};
+
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
