@@ -77,7 +77,7 @@ const sendInvitationEmail = async (
   try {
     console.log(`📧 Envoi email à ${email}...`);
     
-    const { data, error } = await supabase.functions.invoke('send-invitation', {
+    const { data, error } = await supabase.functions.invoke('send-match-invitation', {
       body: {
         to: email,
         recipientName,
