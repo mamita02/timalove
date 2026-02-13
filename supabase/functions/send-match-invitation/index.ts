@@ -11,11 +11,11 @@ serve(async (req: Request) => {
   try {
     const { to, recipientName, partnerName, date, meetLink, calendarLink } = await req.json();
 
-    const resend_api_key = Deno.env.get('resend_api_key');
+    const resend_api_key = Deno.env.get('RESEND_API_KEY');
 
     if (!resend_api_key) {
-      console.error('❌ resend_api_key manquante dans Vault');
-      throw new Error('resend_api_key manquante dans Vault');
+      console.error('❌ RESEND_API_KEY manquante dans Vault');
+      throw new Error('RESEND_API_KEY manquante dans Vault');
     }
 
     console.log('✅ API Key récupérée, longueur:', resend_api_key.length);
