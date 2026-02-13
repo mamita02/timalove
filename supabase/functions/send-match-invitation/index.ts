@@ -110,11 +110,15 @@ serve(async (req: Request) => {
     );
 
   } catch (error: any) {
-    console.error('Erreur:', error);
+    console.error('❌ Erreur complète:', error);
+    console.error('❌ Message:', error.message);
+    console.error('❌ Stack:', error.stack);
+    
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error.message || 'Erreur inconnue'
+        error: error.message || 'Erreur inconnue',
+        details: error.stack || String(error)
       }),
       { 
         status: 500,
