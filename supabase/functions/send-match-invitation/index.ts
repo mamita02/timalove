@@ -14,8 +14,12 @@ serve(async (req: Request) => {
     const resend_api_key = Deno.env.get('resend_api_key');
 
     if (!resend_api_key) {
+      console.error('❌ resend_api_key manquante dans Vault');
       throw new Error('resend_api_key manquante dans Vault');
     }
+
+    console.log('✅ API Key récupérée, longueur:', resend_api_key.length);
+    console.log('✅ Préfixe de la clé:', resend_api_key.substring(0, 8));
 
     // Formater la date
     const dateObj = new Date(date);
@@ -27,6 +31,8 @@ serve(async (req: Request) => {
       hour: '2-digit',
       minute: '2-digit'
     });
+
+    console.log('📧 Envoi email à:', to);
 
     // Envoyer l'email via Resend
     const res = await fetch('https://api.resend.com/emails', {
@@ -80,12 +86,18 @@ serve(async (req: Request) => {
       }),
     });
 
+    console.log('📤 Réponse Resend - Status:', res.status);
+
     if (!res.ok) {
       const errorData = await res.json();
-      throw new Error(JSON.stringify(errorData));
+      console.error('❌ Erreur Resend:', JSON.stringify(errorData, null, 2));
+      console.error('Status:', res.status);
+      console.error('Headers:', Object.fromEntries(res.headers.entries()));
+      throw new Error(`Resend API Error (${res.status}): ${JSON.stringify(errorData)}`);
     }
 
     const responseData = await res.json();
+    console.log('✅ Email envoyé avec succès:', responseData);
 
     return new Response(
       JSON.stringify({ success: true, data: responseData }),
