@@ -47,7 +47,7 @@ export const AboutSection = () => {
                 </p>
                 
                 <p>
-                  Depuis toujours, j’aime écouter et comprendre les autres. Je prends le temps d’entendre ce qui est dit… <span className="italic font-serif text-primary/70">et surtout ce qui ne l’est pas.</span>
+                  Depuis toujours, ma force réside dans l’observation et l’empathie..... <span className="italic font-serif text-primary/70">et surtout ce qui ne l’est pas.</span>
                 </p>
               </div>
             </div>

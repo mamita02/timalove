@@ -14,7 +14,7 @@ const QuiSuisJe = () => {
 
       <main className="pt-20">
         <section className="relative w-full min-h-screen lg:h-[95vh] overflow-hidden bg-white">
-
+          
           {/* IMAGE */}
           <div className="absolute inset-0 lg:inset-y-0 lg:right-0 lg:left-auto w-full lg:w-1/2 h-full pointer-events-none">
             <img
@@ -22,8 +22,6 @@ const QuiSuisJe = () => {
               alt="Tima"
               className="w-full h-full object-cover object-center"
             />
-
-            {/* Overlay uniquement mobile */}
             <div className="absolute inset-0 bg-black/60 lg:hidden" />
           </div>
 
@@ -54,33 +52,30 @@ const QuiSuisJe = () => {
 
                 <div className="w-20 h-1 bg-primary/40 mb-8" />
 
-                {/* Scroll animé uniquement desktop */}
-                <div className="lg:h-[450px] lg:overflow-hidden relative lg:mask-edge">
-
-                  <div className="space-y-8 text-white lg:text-slate-700 text-base md:text-lg lg:text-xl leading-relaxed lg:animate-auto-scroll">
+                {/* Fenêtre du scroll */}
+                <div className="h-[70vh] lg:h-[500px] overflow-hidden relative mask-edge">
+                  
+                  {/* Bloc animé */}
+                  <div className="space-y-8 text-white lg:text-slate-700 text-base md:text-lg lg:text-xl leading-relaxed animate-auto-scroll">
 
                     <p className="text-white lg:text-primary font-medium italic text-xl md:text-2xl">
                       "Je m’appelle Fatimata, que beaucoup appellent Tima."
                     </p>
 
                     <p>
-                      TimaLove est né d’une conviction simple mais profonde :
-                      l’amour mérite d’être vécu avec sincérité, respect et intention.
+                      Plus qu’une vocation, l’accompagnement amoureux est pour moi une évidence. J'ai fondé <strong>TimaLove</strong> sur une conviction profonde : l’amour véritable ne naît pas du hasard, mais de la sincérité, du respect et de l’intentionnalité.
                     </p>
 
                     <p>
-                      Depuis toujours, j’aime écouter, aider et comprendre les autres.
-                      Je prends le temps d’entendre ce qui est dit… mais aussi ce qui ne l’est pas.
+                      Depuis toujours, ma force réside dans l’observation et l’empathie. Je ne me contente pas d’écouter les mots ; je perçois les silences, les attentes inexprimées et le potentiel de bonheur de chaque personne que je rencontre.
                     </p>
 
                     <h2 className="text-2xl font-serif text-white lg:text-primary pt-4 italic">
-                      Une histoire humaine
+                      L'art de la rencontre authentique
                     </h2>
 
                     <p>
-                      Je suis née dans une famille nombreuse...
-                      Grandir dans cet environnement m’a appris une chose :
-                      aimer, ce n’est pas seulement ressentir, c’est comprendre.
+                      Issue d’une famille nombreuse et riche de parcours divers, j'ai très tôt compris que <strong>"aimer, c'est d'abord comprendre"</strong>. Cette école de la vie m'a appris à décrypter les dynamiques humaines pour transformer les incompréhensions en ponts vers l'autre.
                     </p>
 
                     <h2 className="text-2xl font-serif text-white lg:text-primary pt-4 italic">
@@ -88,29 +83,30 @@ const QuiSuisJe = () => {
                     </h2>
 
                     <p>
-                      TimaLove est né du besoin de créer un espace où l’on prend le temps.
-                      Où chaque personne est respectée et chaque rencontre réfléchie.
+                      TimaLove est né d'un besoin de créer un espace où l’on prend le temps. Dans un monde de rencontres superficielles et déshumanisées, je propose une alternative artisanale où chaque mise en relation est réfléchie avec soin.
                     </p>
 
-                    {/* Vision */}
-                    <div className="bg-white/20 lg:bg-white/30 backdrop-blur-md p-8 rounded-[30px] border border-white/30 shadow-sm">
+                    {/* Bloc Vision */}
+                    <div className="bg-white/20 lg:bg-white/10 backdrop-blur-md p-8 rounded-[30px] border border-white/30 shadow-sm">
                       <h3 className="text-white lg:text-primary font-bold mb-4 uppercase tracking-[0.2em] text-xs">
                         Ma Vision
                       </h3>
                       <ul className="space-y-3 text-white lg:text-slate-700">
-                        <li>❤ L’amour avec intention</li>
-                        <li>❤ La communication essentielle</li>
-                        <li>❤ Le respect comme base</li>
+                        <li>❤ L'amour se construit jour après jour</li>
+                        <li>❤ La communication est le socle de la complicité</li>
+                        <li>❤ Le respect est la base de toute relation durable</li>
                       </ul>
                     </div>
 
                     <p className="pt-6 font-serif text-lg md:text-xl text-white lg:text-primary/80 italic">
-                      TimaLove, c’est une main tendue vers ceux qui veulent construire avec le cœur.
+                      TimaLove, c’est une main tendue vers celles et ceux qui ne veulent plus jouer avec les sentiments, mais construire avec le cœur.
                     </p>
 
-                    <div className="h-20 lg:h-[150px]" />
+                    {/* espace pour permettre la sortie dans le fondu */}
+                    <div className="h-40 lg:h-[300px]" />
                   </div>
                 </div>
+
               </div>
             </div>
           </div>
@@ -121,12 +117,13 @@ const QuiSuisJe = () => {
 
       <style>{`
         @keyframes autoScroll {
-          0% { transform: translateY(0); }
-          100% { transform: translateY(-68%); }
+          from { transform: translateY(0); }
+          to { transform: translateY(-100%); }
         }
 
         .animate-auto-scroll {
-          animation: autoScroll 42s linear infinite;
+          animation: autoScroll 50s linear infinite;
+          will-change: transform;
         }
 
         .animate-auto-scroll:hover {
@@ -134,8 +131,8 @@ const QuiSuisJe = () => {
         }
 
         .mask-edge {
-          mask-image: linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
-          -webkit-mask-image: linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
+          mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+          -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
         }
       `}</style>
     </div>

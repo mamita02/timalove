@@ -38,7 +38,7 @@ export const NotificationCenter = () => {
     .channel("notifications")
     .on(
       "postgres_changes",
-      { event: "INSERT", schema: "public", table: "notifications" },
+      { event: "*", schema: "public", table: "notifications" },
       async () => {
         const data = await getNotifications();
         setNotifications(data);
@@ -55,17 +55,32 @@ export const NotificationCenter = () => {
 
 
 
-  const handleMarkAsRead = (id: string) => {
-    markAsRead(id);
-  };
+  const handleMarkAsRead = async (id: string) => {
+  await markAsRead(id);
 
-  const handleMarkAllAsRead = () => {
-    markAllAsRead();
-  };
+  const data = await getNotifications();
+  setNotifications(data);
+  setUnreadCount(data.filter((n) => !n.read).length);
+};
 
-  const handleRemove = (id: string) => {
-    removeNotification(id);
-  };
+
+  const handleMarkAllAsRead = async () => {
+  await markAllAsRead();
+
+  const data = await getNotifications();
+  setNotifications(data);
+  setUnreadCount(0);
+};
+
+
+  const handleRemove = async (id: string) => {
+  await removeNotification(id);
+
+  const data = await getNotifications();
+  setNotifications(data);
+  setUnreadCount(data.filter((n) => !n.read).length);
+};
+
 
   const getIcon = (type: Notification['type']) => {
   switch (type) {

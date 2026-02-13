@@ -28,7 +28,11 @@ export const getNotifications = async (): Promise<Notification[]> => {
   const { data, error } = await supabase
     .from("notifications")
 .select("*")
-.in("type", ["admin_like", "admin_request_received"])
+.in("type", [
+  "admin_like",
+  "admin_request_received",
+  "new_registration"
+])
 .order("created_at", { ascending: false });
 
   if (error || !data) {
