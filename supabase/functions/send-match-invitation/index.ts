@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 
-serve(async (req) => {
+
+serve(async (req: Request) => {
   // Gestion CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -35,7 +36,7 @@ serve(async (req) => {
         'Authorization': `Bearer ${resend_api_key}`,
       },
       body: JSON.stringify({
-        from: 'TimaLove Match <noreply@tima-love.com>',
+        from: 'TimaLove Match <onboarding@resend.dev>',
         to: [to],
         subject: '💕 Votre rencontre TimaLove Match est planifiée !',
         html: `
@@ -96,7 +97,7 @@ serve(async (req) => {
       }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erreur:', error);
     return new Response(
       JSON.stringify({ 
