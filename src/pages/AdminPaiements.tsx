@@ -28,6 +28,7 @@ export const AdminPaiements = () => {
   const [endDate, setEndDate] = useState("");
   const [searchName, setSearchName] = useState("");
   const [filterExpiringSoon, setFilterExpiringSoon] = useState(false);
+  
 
   // ===============================
   // 🔥 LOAD DATA STABLE VERSION
@@ -84,6 +85,9 @@ export const AdminPaiements = () => {
       });
 
       setTransactions(enriched || []);
+      console.log("Transactions:", transactions);
+      
+
     } catch (err) {
       console.error("Erreur AdminPaiements:", err);
       toast({
@@ -132,8 +136,12 @@ export const AdminPaiements = () => {
   // ===============================
   // 📊 STATS
   // ===============================
+  
   const stats = useMemo(() => {
-    const paidTxs = transactions.filter((t) => t.status === "paid");
+  const paidTxs = transactions.filter(
+  (t) => t.status?.toLowerCase().trim() === "paid"
+);
+console.log("PaidTxs:", paidTxs);
     const now = new Date();
 
     const expiringSoon = transactions.filter((t) => {
