@@ -2,7 +2,6 @@ import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
-import { addNotification } from "@/lib/notifications";
 import { Briefcase, Check, ChevronLeft, Globe, Heart, Loader2, MapPin, Moon, Send, ShieldCheck, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -104,12 +103,7 @@ const MemberDetail = () => {
         const likerName = likerData ? `${likerData.first_name} ${likerData.last_name}` : 'Un membre';
         const likedName = `${member.first_name} ${member.last_name}`;
         
-        // Créer une notification admin
-        addNotification({
-          type: 'new_like',
-          title: 'Nouveau coup de cœur ! 💖',
-          message: `${likerName} a liké ${likedName}`,
-        });
+        
         
         toast.success("Coup de cœur envoyé ! 💖");
       }

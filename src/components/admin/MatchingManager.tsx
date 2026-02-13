@@ -1,27 +1,16 @@
-import { useState, useEffect } from "react";
-import { getAllRegistrations, type RegistrationRecord } from "@/lib/supabase";
 import {
-  generateGoogleMeetLink,
   createGoogleCalendarEvent,
   createMatch,
+  generateGoogleMeetLink,
   generateInvitationEmail,
   getAllMatches,
 } from "@/lib/matching";
-import { addNotification } from "@/lib/notifications";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { getAllRegistrations, type RegistrationRecord } from "@/lib/supabase";
+import { useEffect, useState } from "react";
+
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { toast } from "@/hooks/use-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -30,20 +19,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/hooks/use-toast";
+import {
+  Briefcase,
+  Calendar,
+  Check,
+  Copy,
+  ExternalLink,
+  Heart,
+  Mail,
+  MapPin,
+  User,
   Users,
   Video,
-  Calendar,
-  Mail,
-  User,
-  MapPin,
-  Briefcase,
-  Heart,
-  ExternalLink,
-  Copy,
-  Check,
 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export const MatchingManager = () => {
   const [men, setMen] = useState<RegistrationRecord[]>([]);
@@ -175,13 +175,7 @@ export const MatchingManager = () => {
         console.log("📧 Email pour la femme:", emailWoman);
 
         // Ajouter une notification
-        addNotification(
-          'new_match',
-          'Nouveau match créé !',
-          `Match entre ${selectedMan.firstName} et ${selectedWoman.firstName}`,
-          { matchId: response.data?.id }
-        );
-
+        
         toast({
           title: "✓ Match créé avec succès !",
           description: `Invitations envoyées à ${selectedMan.firstName} et ${selectedWoman.firstName}`,
