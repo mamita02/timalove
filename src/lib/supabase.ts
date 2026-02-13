@@ -165,4 +165,140 @@ const mapRecord = (r: any): RegistrationRecord => ({
   photo_url_3: r.photo_url_3,
 });
 
+// ============================================
+// Fonctions pour le système de likes
+// ============================================
+
+export interface ProfileLike {
+  id: string;
+  liker_id: string;
+  liked_id: string;
+  created_at: string;
+}
+
+/**
+ * Ajouter un like à un profil
+ */
+export const likeProfile = async (
+  likerId: string,
+  likedId: string
+): Promise<SupabaseResponse<ProfileLike>> => {
+  try {
+    const { data, error } = await supabase
+      .from('profile_likes')
+      .insert([{ liker_id: likerId, liked_id: likedId }])
+      .select()
+      .single();
+
+    if (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    };
+  }
+};
+
+/**
+ * Retirer un like d'un profil
+ */
+export const unlikeProfile = async (
+  likerId: string,
+  likedId: string
+): Promise<SupabaseResponse> => {
+  try {
+    const { error } = await supabase
+      .from('profile_likes')
+      .delete()
+      .eq('liker_id', likerId)
+      .eq('liked_id', likedId);
+
+    if (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    };
+  }
+};
+
+/**
+ * Récupérer tous les likes
+ */
+export const getAllLikes = async (): Promise<SupabaseResponse<ProfileLike[]>> => {
+  try {
+    const { data, error } = await supabase
+      .from('profile_likes')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+
+    return {
+      success: true,
+      data: data || [],
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    };
+  }
+};
+
+/**
+ * Compter les likes d'un profil
+ */
+export const getProfileLikesCount = async (
+  profileId: string
+): Promise<SupabaseResponse<number>> => {
+  try {
+    const { count, error } = await supabase
+      .from('profile_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('liked_id', profileId);
+
+    if (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+
+    return {
+      success: true,
+      data: count || 0,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    };
+  }
+};
+
 export default supabase;

@@ -11,6 +11,7 @@ import {
   Menu,
   MessageSquare,
   Settings,
+  UserCheck,
   Users,
   X
 } from "lucide-react";
@@ -33,6 +34,12 @@ const menuItems = [
     href: "/admin/inscriptions",
     icon: Users,
     description: "Gérer les inscriptions",
+  },
+  {
+    title: "Matching",
+    href: "/admin/matching",
+    icon: UserCheck,
+    description: "Créer des matchs",
   },
   {
     title: "Paiements",

@@ -23,6 +23,7 @@ import AdminPage from "./pages/AdminPage"; // C'est ta page "Espace Privé" (Log
 import { AdminPaiements } from "./pages/AdminPaiements";
 import { AdminReviews } from "./pages/AdminReviews";
 import { AdminSettings } from "./pages/AdminSettings";
+import Matching from "./pages/Matching";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ const App = () => (
             <Route index element={<AdminInscriptions />} /> 
             
             <Route path="inscriptions" element={<AdminInscriptions />} />
+            <Route path="matching" element={<Matching />} />
             <Route path="paiements" element={<AdminPaiements />} />
             <Route path="avis" element={<AdminReviews />} />
             <Route path="parametres" element={<AdminSettings />} />
