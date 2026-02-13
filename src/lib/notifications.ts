@@ -1,199 +1,111 @@
 /**
- * Service de notifications pour l'admin
+ * Service de notifications ADMIN
+ * Version propre : Supabase uniquement (pas de localStorage)
  */
 
-import { supabase } from './supabase';
+import { supabase } from "./supabase";
 
 export interface Notification {
   id: string;
-  type: 'new_registration' | 'new_match' | 'system' | 'meeting_confirmed' | 'new_like';
+  type:
+    | "new_registration"
+    | "new_match"
+    | "system"
+    | "meeting_confirmed"
+    | "new_like"
+    | "admin_like"
+    | "admin_request_received";
   title: string;
   message: string;
   read: boolean;
   createdAt: string;
-  data?: any;
 }
 
-// Fonction pour générer un UUID compatible
-const generateUUID = (): string => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-};
-
-// Stocker les notifications en mémoire (vous pouvez aussi utiliser Supabase Realtime)
-let notifications: Notification[] = [];
-let listeners: ((notifications: Notification[]) => void)[] = [];
-
 /**
- * Ajouter une notification
+ * Récupérer toutes les notifications depuis la base
  */
-export const addNotification = (
-  type: Notification['type'],
-  title: string,
-  message: string,
-  data?: any
-) => {
-  const notification: Notification = {
-    id: generateUUID(),
-    type,
-    title,
-    message,
-    read: false,
-    createdAt: new Date().toISOString(),
-    data,
-  };
+export const getNotifications = async (): Promise<Notification[]> => {
+  const { data, error } = await supabase
+    .from("notifications")
+.select("*")
+.in("type", ["admin_like", "admin_request_received"])
+.order("created_at", { ascending: false });
 
-  notifications.unshift(notification);
-  notifyListeners();
+  if (error || !data) {
+    console.error("Erreur récupération notifications:", error);
+    return [];
+  }
 
-  // Sauvegarder dans localStorage
-  saveNotifications();
-
-  return notification;
+  return data.map((n: any) => ({
+    id: n.id,
+    type: n.type,
+    title: getTitleFromType(n.type),
+    message: n.message,
+    read: n.is_read,
+    createdAt: n.created_at,
+  }));
 };
 
 /**
  * Marquer une notification comme lue
  */
-export const markAsRead = (id: string) => {
-  const notification = notifications.find((n) => n.id === id);
-  if (notification) {
-    notification.read = true;
-    notifyListeners();
-    saveNotifications();
+export const markAsRead = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from("notifications")
+    .update({ is_read: true })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Erreur markAsRead:", error);
   }
 };
 
 /**
- * Marquer toutes comme lues
+ * Marquer toutes les notifications comme lues
  */
-export const markAllAsRead = () => {
-  notifications.forEach((n) => (n.read = true));
-  notifyListeners();
-  saveNotifications();
+export const markAllAsRead = async (): Promise<void> => {
+  const { error } = await supabase
+    .from("notifications")
+    .update({ is_read: true })
+    .eq("is_read", false);
+
+  if (error) {
+    console.error("Erreur markAllAsRead:", error);
+  }
 };
 
 /**
  * Supprimer une notification
  */
-export const removeNotification = (id: string) => {
-  notifications = notifications.filter((n) => n.id !== id);
-  notifyListeners();
-  saveNotifications();
-};
+export const removeNotification = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from("notifications")
+    .delete()
+    .eq("id", id);
 
-/**
- * Obtenir toutes les notifications
- */
-export const getNotifications = (): Notification[] => {
-  return notifications;
-};
-
-/**
- * Obtenir les non lues
- */
-export const getUnreadCount = (): number => {
-  return notifications.filter((n) => !n.read).length;
-};
-
-/**
- * S'abonner aux changements
- */
-export const subscribeToNotifications = (
-  callback: (notifications: Notification[]) => void
-) => {
-  listeners.push(callback);
-  return () => {
-    listeners = listeners.filter((l) => l !== callback);
-  };
-};
-
-/**
- * Notifier tous les listeners
- */
-const notifyListeners = () => {
-  listeners.forEach((listener) => listener([...notifications]));
-};
-
-/**
- * Sauvegarder dans localStorage
- */
-const saveNotifications = () => {
-  try {
-    localStorage.setItem('admin_notifications', JSON.stringify(notifications));
-  } catch (error) {
-    console.error('Erreur lors de la sauvegarde des notifications:', error);
+  if (error) {
+    console.error("Erreur removeNotification:", error);
   }
 };
 
 /**
- * Charger depuis localStorage
+ * Générer un titre automatique selon le type
  */
-export const loadNotifications = () => {
-  try {
-    const saved = localStorage.getItem('admin_notifications');
-    if (saved) {
-      notifications = JSON.parse(saved);
-      notifyListeners();
-    }
-  } catch (error) {
-    console.error('Erreur lors du chargement des notifications:', error);
+const getTitleFromType = (type: string): string => {
+  switch (type) {
+    case "admin_like":
+      return "Nouveau like";
+    case "admin_request_received":
+      return "Nouvelle demande";
+    case "new_registration":
+      return "Nouvelle inscription";
+    case "new_match":
+      return "Nouveau match";
+    case "meeting_confirmed":
+      return "Rendez-vous confirmé";
+    case "system":
+      return "Notification système";
+    default:
+      return "Notification";
   }
 };
-
-/**
- * Vérifier les nouvelles inscriptions (polling)
- */
-let lastCheckTime = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24h en arrière au démarrage
-
-export const checkNewRegistrations = async () => {
-  try {
-    // Charger la dernière vérification depuis localStorage
-    const savedLastCheck = localStorage.getItem('admin_last_check');
-    if (savedLastCheck && !isNaN(Date.parse(savedLastCheck))) {
-      lastCheckTime = new Date(savedLastCheck);
-    }
-
-    const { data, error } = await supabase
-      .from('registrations')
-      .select('id, first_name, last_name, created_at')
-      .gte('created_at', lastCheckTime.toISOString())
-      .order('created_at', { ascending: false });
-
-    if (!error && data && data.length > 0) {
-      data.forEach((reg) => {
-        addNotification(
-          'new_registration',
-          'Nouvelle inscription !',
-          `${reg.first_name} ${reg.last_name} vient de s'inscrire`,
-          { registrationId: reg.id }
-        );
-      });
-    }
-
-    lastCheckTime = new Date();
-    // Sauvegarder dans localStorage
-    localStorage.setItem('admin_last_check', lastCheckTime.toISOString());
-  } catch (error) {
-    console.error('Erreur lors de la vérification:', error);
-  }
-};
-
-/**
- * Démarrer la surveillance automatique
- */
-export const startNotificationPolling = () => {
-  // Vérifier toutes les 30 secondes
-  const interval = setInterval(checkNewRegistrations, 30000);
-  
-  // Vérification initiale
-  checkNewRegistrations();
-
-  return () => clearInterval(interval);
-};
-
-// Charger les notifications au démarrage
-loadNotifications();
