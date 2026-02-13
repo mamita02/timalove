@@ -75,6 +75,8 @@ const sendInvitationEmail = async (
   calendarLink: string
 ) => {
   try {
+    console.log(`📧 Envoi email à ${email}...`);
+    
     const { data, error } = await supabase.functions.invoke('send-invitation', {
       body: {
         to: email,
@@ -87,14 +89,20 @@ const sendInvitationEmail = async (
     });
 
     if (error) {
-      console.error('Erreur envoi email:', error);
+      console.error('❌ Erreur envoi email à', email, ':', error);
       return false;
     }
 
-    console.log('✅ Email envoyé à:', email);
+    // Vérifier si la réponse contient une erreur (ex: API key invalid)
+    if (data && data.statusCode && data.statusCode !== 200) {
+      console.error('❌ Erreur Resend pour', email, ':', data.message || data);
+      return false;
+    }
+
+    console.log('✅ Email envoyé avec succès à:', email);
     return true;
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error('❌ Exception lors de l\'envoi email à', email, ':', error);
     return false;
   }
 };
@@ -132,14 +140,30 @@ export const createMatch = async (
     if (error) {
       console.error('Erreur lors de la création du match:', error);
       
-      // Si la table n'existe pas, sauvegarder localement
-      saveMatchLocally(matchData);
-      
-      return {
-        success: true,
-        data: matchData,
-        message: 'Match sauvegardé localement (table Supabase à créer)',
-      };
+      // Si c'est un doublon (code 23505), on récupère le match existant
+      if (error.code === '23505') {
+        console.log('⚠️ Match déjà existant, récupération...');
+        const { data: existingMatch } = await supabase
+          .from('matches')
+          .select()
+          .eq('man_id', man.id)
+          .eq('woman_id', woman.id)
+          .single();
+        
+        if (existingMatch) {
+          console.log('✅ Match trouvé, envoi des emails...');
+          // Continuer avec l'envoi des emails même si le match existe
+        }
+      } else {
+        // Si la table n'existe pas, sauvegarder localement
+        saveMatchLocally(matchData);
+        
+        return {
+          success: false,
+          error: error.message,
+          message: 'Erreur lors de la création du match',
+        };
+      }
     }
 
     // Générer les liens calendrier
@@ -164,7 +188,7 @@ export const createMatch = async (
     // Envoyer les emails d'invitation
     console.log('📧 Envoi des invitations par email...');
     
-    await Promise.all([
+    const [emailResultMan, emailResultWoman] = await Promise.all([
       sendInvitationEmail(
         man.email,
         `${man.firstName} ${man.lastName}`,
@@ -183,10 +207,19 @@ export const createMatch = async (
       ),
     ]);
 
+    // Vérifier les résultats d'envoi
+    if (!emailResultMan || !emailResultWoman) {
+      console.warn('⚠️ Certains emails n\'ont pas pu être envoyés');
+      console.warn('Email homme:', emailResultMan ? '✅' : '❌');
+      console.warn('Email femme:', emailResultWoman ? '✅' : '❌');
+    }
+
     return {
       success: true,
       data,
-      message: 'Match créé avec succès et invitations envoyées',
+      message: emailResultMan && emailResultWoman 
+        ? 'Match créé avec succès et invitations envoyées' 
+        : 'Match créé avec succès (emails partiellement envoyés)',
     };
   } catch (error) {
     console.error('Erreur:', error);
