@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { NotificationCenter } from "@/components/admin/NotificationCenter";
 import {
   ChevronRight,
   CreditCard,
@@ -102,12 +103,22 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
             <Heart className="h-6 w-6 text-primary" />
             <span className="font-serif text-xl font-semibold">TimaLove</span>
           </div>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 text-gray-600"
-          >
-            {sidebarOpen ? <X /> : <Menu />}
-          </button>
+          <div className="flex items-center gap-2">
+            <NotificationCenter />
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 text-gray-600"
+            >
+              {sidebarOpen ? <X /> : <Menu />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Header Desktop */}
+      <div className="hidden lg:block fixed top-0 right-0 left-64 z-40 bg-white border-b">
+        <div className="flex items-center justify-end px-6 py-3">
+          <NotificationCenter />
         </div>
       </div>
 
@@ -215,7 +226,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 
       {/* Main Content avec padding corrigé */}
       <main className="lg:pl-64">
-        <div className="pt-20 lg:pt-8 p-4 md:p-8"> {/* Ajout de padding ici */}
+        <div className="pt-20 lg:pt-16 p-4 md:p-8"> {/* Ajout de padding pour le header */}
           {children}
         </div>
       </main>
