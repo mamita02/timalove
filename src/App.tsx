@@ -4,12 +4,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 
-// IMPORT DU LAYOUT
+// ADMIN LAYOUT
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdminProtectedRoute } from "@/components/admin/AdminProtectedRoute";
 
-// IMPORTS PAGES PUBLIQUES
+// PAGES PUBLIQUES
 import Index from "./pages/Index";
-import Legal from './pages/Legal';
+import Legal from "./pages/Legal";
 import MemberDetail from "./pages/MemberDetail";
 import NotFound from "./pages/NotFound";
 import QuiSuisJe from "./pages/QuiSuisJe";
@@ -17,9 +18,9 @@ import RegistrationSuccess from "./pages/RegistrationSuccess";
 import { UserLogin } from "./pages/UserLogin";
 import UserProfile from "./pages/UserProfile";
 
-// IMPORTS PAGES ADMIN
+// PAGES ADMIN
 import AdminInscriptions from "./pages/AdminInscriptions";
-import AdminPage from "./pages/AdminPage"; // C'est ta page "Espace Privé" (Login Admin)
+import AdminPage from "./pages/AdminPage";
 import { AdminPaiements } from "./pages/AdminPaiements";
 import { AdminReviews } from "./pages/AdminReviews";
 import { AdminSettings } from "./pages/AdminSettings";
@@ -34,7 +35,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* --- 1. PAGES PUBLIQUES ET CLIENTS --- */}
+
+          {/* PUBLIC */}
           <Route path="/" element={<Index />} />
           <Route path="/qui-suis-je" element={<QuiSuisJe />} />
           <Route path="/registration-success" element={<RegistrationSuccess />} />
@@ -43,33 +45,30 @@ const App = () => (
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/profile/:id" element={<MemberDetail />} />
 
-          {/* --- 2. AUTHENTIFICATION ADMIN (SANS LE MENU) --- */}
-          {/* On affiche le login SEUL, sans AdminLayout autour */}
+          {/* ADMIN LOGIN */}
           <Route path="/admin/login" element={<AdminPage />} />
 
-          {/* --- 3. ESPACE ADMINISTRATION (AVEC LE MENU) --- */}
-          {/* Toutes les routes ci-dessous s'afficheront à DROITE du menu */}
-          <Route 
-            path="/admin" 
-            element={
-              <AdminLayout>
-                <Outlet />
-              </AdminLayout>
-            }
-          >
-            {/* Si on va sur /admin, on peut soit rediriger vers dashboard, 
-                soit afficher une page d'accueil admin spécifique */}
-            <Route index element={<AdminInscriptions />} /> 
-            
-            <Route path="inscriptions" element={<AdminInscriptions />} />
-            <Route path="matching" element={<Matching />} />
-            <Route path="paiements" element={<AdminPaiements />} />
-            <Route path="avis" element={<AdminReviews />} />
-            <Route path="parametres" element={<AdminSettings />} />
+          {/* ADMIN PROTECTED */}
+          <Route path="/admin" element={<AdminProtectedRoute />}>
+            <Route
+              element={
+                <AdminLayout>
+                  <Outlet />
+                </AdminLayout>
+              }
+            >
+              <Route index element={<AdminInscriptions />} />
+              <Route path="inscriptions" element={<AdminInscriptions />} />
+              <Route path="matching" element={<Matching />} />
+              <Route path="paiements" element={<AdminPaiements />} />
+              <Route path="avis" element={<AdminReviews />} />
+              <Route path="parametres" element={<AdminSettings />} />
+            </Route>
           </Route>
 
-          {/* 404 - Toujours en dernier */}
+          {/* 404 */}
           <Route path="*" element={<NotFound />} />
+
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
