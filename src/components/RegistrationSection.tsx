@@ -120,7 +120,12 @@ export const RegistrationSection = () => {
         password: data.password,
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        if (authError.message.includes('already registered') || authError.message.includes('User already registered')) {
+          throw new Error(`L'email ${data.email} est déjà utilisé. Veuillez vous connecter ou utiliser un autre email.`);
+        }
+        throw authError;
+      }
 
       // 4. INSERTION DANS LA TABLE DES PROFILS
       if (authData.user) {
