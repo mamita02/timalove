@@ -272,12 +272,14 @@ export const RegistrationSection = () => {
                       <FormItem className="space-y-1">
                         <Label className="text-[10px] uppercase text-slate-400 ml-1">Email</Label>
                         <FormControl><Input type="email" placeholder="Email" className="h-10 border-slate-200 rounded-xl" {...field} /></FormControl>
+                        <FormMessage className="text-[10px]" />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="phone" render={({ field }) => (
                       <FormItem className="space-y-1">
                         <Label className="text-[10px] uppercase text-slate-400 ml-1">Téléphone</Label>
                         <FormControl><Input placeholder="Numéro" className="h-10 border-slate-200 rounded-xl" {...field} /></FormControl>
+                        <FormMessage className="text-[10px]" />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="gender" render={({ field }) => (
@@ -288,6 +290,7 @@ export const RegistrationSection = () => {
                           <option value="male">Homme</option>
                           <option value="female">Femme</option>
                         </select>
+                        <FormMessage className="text-[10px]" />
                       </FormItem>
                     )} />
                   </div>
@@ -302,12 +305,14 @@ export const RegistrationSection = () => {
                           <option value="Musulmane">Musulmane</option>
                           <option value="Chrétienne">Chrétienne</option>
                         </select>
+                        <FormMessage className="text-[10px]" />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="password" render={({ field }) => (
                       <FormItem className="md:col-span-2 space-y-1">
                         <Label className="text-[10px] uppercase text-slate-400 ml-1">Mot de passe</Label>
                         <FormControl><Input type="password" placeholder="••••••••" className="h-10 border-slate-200 rounded-xl" {...field} /></FormControl>
+                        <FormMessage className="text-[10px]" />
                       </FormItem>
                     )} />
                   </div>
@@ -327,12 +332,14 @@ export const RegistrationSection = () => {
                       <FormItem className="space-y-1">
                         <Label className="text-[10px] uppercase text-slate-400 ml-1">Résidence</Label>
                         <FormControl><Input placeholder="Pays" className="h-10 border-slate-200 rounded-xl" {...field} /></FormControl>
+                        <FormMessage className="text-[10px]" />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="city" render={({ field }) => (
                       <FormItem className="space-y-1">
                         <Label className="text-[10px] uppercase text-slate-400 ml-1">Ville</Label>
                         <FormControl><Input placeholder="Ville" className="h-10 border-slate-200 rounded-xl" {...field} /></FormControl>
+                        <FormMessage className="text-[10px]" />
                       </FormItem>
                     )} />
                   </div>
@@ -343,12 +350,14 @@ export const RegistrationSection = () => {
                       <FormItem className="space-y-1">
                         <Label className="text-[10px] uppercase text-slate-400 ml-1">Moi en quelques mots "50 caractères minimum"</Label>
                         <FormControl><Textarea placeholder="..." className="min-h-[80px] border-slate-200 rounded-xl text-sm" {...field} /></FormControl>
+                        <FormMessage className="text-[10px]" />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="lookingFor" render={({ field }) => (
                       <FormItem className="space-y-1">
                         <Label className="text-[10px] uppercase text-slate-400 ml-1">Mon partenaire idéal"30 caractères minimum"</Label>
                         <FormControl><Textarea placeholder="..." className="min-h-[80px] border-slate-200 rounded-xl text-sm" {...field} /></FormControl>
+                        <FormMessage className="text-[10px]" />
                       </FormItem>
                     )} />
                   </div>
