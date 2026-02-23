@@ -19,6 +19,7 @@ import { UserLogin } from "./pages/UserLogin";
 import UserProfile from "./pages/UserProfile";
 
 // PAGES ADMIN
+import { AdminActivities } from "./components/admin/AdminActivities";
 import AdminInscriptions from "./pages/AdminInscriptions";
 import AdminPage from "./pages/AdminPage";
 import { AdminPaiements } from "./pages/AdminPaiements";
@@ -57,8 +58,10 @@ const App = () => (
                 </AdminLayout>
               }
             >
+              {/* Ces routes seront accessibles via /admin/... */}
               <Route index element={<AdminInscriptions />} />
               <Route path="inscriptions" element={<AdminInscriptions />} />
+              <Route path="activites" element={<AdminActivities />} /> {/* NOUVELLE ROUTE ICI */}
               <Route path="matching" element={<Matching />} />
               <Route path="paiements" element={<AdminPaiements />} />
               <Route path="avis" element={<AdminReviews />} />

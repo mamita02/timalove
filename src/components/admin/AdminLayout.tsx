@@ -1,9 +1,10 @@
+import { NotificationCenter } from "@/components/admin/NotificationCenter";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
-import { NotificationCenter } from "@/components/admin/NotificationCenter";
 import {
+  Activity,
   ChevronRight,
   CreditCard,
   Heart,
@@ -35,6 +36,13 @@ const menuItems = [
     href: "/admin/inscriptions",
     icon: Users,
     description: "Gérer les inscriptions",
+  },
+  // --- NOUVEL ONGLET ACTIVITÉS ---
+  {
+    title: "Activités",
+    href: "/admin/activites",
+    icon: Activity,
+    description: "Demandes & Coups de cœur",
   },
   {
     title: "Matching",
