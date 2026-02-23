@@ -111,7 +111,7 @@ const MemberDetail = () => {
             from_user_id: currentUserId,
             to_user_id: id,
             message: "a eu un coup de cœur pour votre profil !",
-            type: 'like',
+            type: 'new_like',
             is_read: false
           });
 
