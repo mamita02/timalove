@@ -57,7 +57,7 @@ const MemberDetail = () => {
                 .select('id')
                 .eq('from_user_id', userId)
                 .eq('to_user_id', id) // On utilise l'ID de l'URL
-                .eq('type', 'like');
+                .in('type', ['like', 'new_like', 'admin_like']);
 
               if (likes && likes.length > 0) setHasLiked(true);
             }
