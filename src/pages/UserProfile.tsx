@@ -258,27 +258,42 @@ useEffect(() => {
         </div>
       </div>
 
-      <main className="py-8 container mx-auto px-4">
-        {userSexe === 'homme' && !hasPaid && (
-          <div className="mb-10 bg-slate-900 rounded-[2.5rem] p-8 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
-            <div>
-              <h2 className="text-2xl font-serif mb-2 text-rose-200">Accès Premium à 50 € / 32 800 FCFA</h2>
-              <p className="text-slate-400 text-sm">Débloquez les photos et les profils illimités. </p>
-            </div>
-            <SubscriptionButton userId={sessionUser?.id} />
-          </div>
-        )}
+    <main className="py-8">
 
-        <h1 className="text-2xl font-serif text-slate-900 mb-8">
-          Profils {userSexe === 'femme' ? 'masculins' : 'féminins'}
-        </h1>
+  {/* ✅ BLOC PREMIUM FULL WIDTH */}
+  {userSexe === 'homme' && !hasPaid && (
+  <div className="w-screen relative left-1/2 -translate-x-1/2 mb-10">
+    <div className="bg-slate-900 rounded-none  p-8 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+      <div>
+        <h2 className="text-2xl font-serif mb-2 text-rose-200">
+          Accès Premium à 50 € / 32 800 FCFA
+        </h2>
+        <p className="text-slate-400 text-sm">
+          Débloquez les photos et les profils illimités.
+        </p>
+      </div>
 
-        <MemberGallery 
-          forceShowNet={hasPaid} 
-          targetSexe={userSexe === 'femme' ? 'homme' : 'femme'} 
-          filters={filters} 
-        />
-      </main>
+      <SubscriptionButton userId={sessionUser?.id} />
+    </div>
+  </div>
+)}
+
+  {/* ✅ CONTENU NORMAL RESTE DANS CONTAINER */}
+  <div className="container mx-auto px-4">
+
+    <h1 className="text-2xl font-serif text-slate-900 mb-8">
+      Profils {userSexe === 'femme' ? 'masculins' : 'féminins'}
+    </h1>
+
+    <MemberGallery 
+      forceShowNet={hasPaid} 
+      targetSexe={userSexe === 'femme' ? 'homme' : 'femme'} 
+      filters={filters} 
+    />
+
+  </div>
+
+</main>
       <Footer />
     </div>
   );

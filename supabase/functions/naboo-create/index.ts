@@ -2,8 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async (req) => {
-
-  // 🔥 CORS
+  // 🔥 Configuration CORS
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       headers: {
@@ -20,10 +19,16 @@ serve(async (req) => {
       throw new Error("UserId manquant");
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const nabooApiKey = Deno.env.get("NABOO_API_KEY")!;
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Construction dynamique de l'URL du webhook
+    // On extrait l'ID du projet depuis l'URL Supabase
+    const projectId = supabaseUrl.split(".")[0].split("//")[1];
+    const callbackUrl = `https://hpclxgpvmnxdnhrqczdz.supabase.co/functions/v1/naboo-webhook`;
 
     // 🔥 APPEL NABOO V2 (PROD)
     const naboResponse = await fetch(
@@ -31,22 +36,23 @@ serve(async (req) => {
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${Deno.env.get("NABOO_API_KEY")}`,
+          "Authorization": `Bearer ${nabooApiKey}`,
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
         body: JSON.stringify({
-          method_of_payment: ["wave", "orange_money"],
+          method_of_payment: ["wave", "orange_money", "bank"],
           products: [
             {
               name: "Abonnement Premium",
-              price: 100,
+              price: 32800 , // Prix mis à jour selon tes besoins (ex: 5000 FCFA)
               quantity: 1,
-              description: "Accès premium"
+              description: "Accès premium complet"
             }
           ],
-          success_url: "https://darkblue-elk-319522.hostingersite.com/success",
-          error_url: "https://darkblue-elk-319522.hostingersite.com/error",
+          success_url: "https://darkblue-elk-319522.hostingersite.com/profile", 
+          error_url: "https://darkblue-elk-319522.hostingersite.com/profile/error",
+          callback_url: callbackUrl, // 🚀 C'est ici que Naboo préviendra ton site
           fees_customer_side: false,
           is_escrow: false,
           is_merchant: false,
@@ -62,22 +68,26 @@ serve(async (req) => {
     const naboData = await naboResponse.json();
 
     if (!naboResponse.ok) {
-      console.error("Erreur Naboo:", naboData);
-      throw new Error("Erreur API Naboo");
+      console.error("Erreur Naboo détaillée:", naboData);
+      throw new Error(naboData.message || "Erreur lors de la création de la transaction Naboo");
     }
 
     if (!naboData.checkout_url) {
-      console.error("Réponse Naboo invalide:", naboData);
-      throw new Error("checkout_url manquant");
+      console.error("Réponse Naboo sans URL:", naboData);
+      throw new Error("checkout_url manquant dans la réponse Naboo");
     }
 
-    // 🔥 INSERT DB
-    await supabase.from("transactions").insert({
+    // 🔥 ENREGISTREMENT DANS LA TABLE TRANSACTIONS
+    const { error: dbError } = await supabase.from("transactions").insert({
       user_id: userId,
       order_id: naboData.order_id,
       amount: naboData.amount,
       status: "pending",
     });
+
+    if (dbError) {
+      console.error("Erreur insertion DB:", dbError);
+    }
 
     return new Response(
       JSON.stringify({ url: naboData.checkout_url }),
@@ -94,7 +104,7 @@ serve(async (req) => {
     console.error("ERREUR COMPLETE:", error);
 
     return new Response(
-      JSON.stringify({ error: error?.message }),
+      JSON.stringify({ error: error?.message || "Erreur interne du serveur" }),
       {
         status: 500,
         headers: {

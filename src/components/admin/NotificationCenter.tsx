@@ -17,9 +17,8 @@ import {
 } from "@/lib/notifications";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
-import { Bell, Check, CheckCheck, Info, Trash2, UserPlus, Users } from "lucide-react";
+import { Bell, Check, CheckCheck, Heart, Info, Link, Trash2, UserPlus, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
-
 export const NotificationCenter = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -82,44 +81,26 @@ export const NotificationCenter = () => {
 };
 
 
-  const getIcon = (type: Notification['type']) => {
+  // Dans ton switch getIcon
+const getIcon = (type: Notification['type']) => {
   switch (type) {
-    case 'new_registration':
-      return <UserPlus className="h-4 w-4" />;
-    case 'new_match':
-      return <Users className="h-4 w-4" />;
-    case 'meeting_confirmed':
-      return <Check className="h-4 w-4" />;
-
-    case 'admin_like':
-      return <Bell className="h-4 w-4" />;
-
-    case 'admin_request_received':
-      return <UserPlus className="h-4 w-4" />;
-
-    default:
-      return <Info className="h-4 w-4" />;
+    case 'new_registration': return <UserPlus className="h-4 w-4" />;
+    case 'admin_like': return <Heart className="h-4 w-4" />; // Changé pour un Coeur
+    case 'admin_request_received': return <Zap className="h-4 w-4" />; // Un éclair pour la demande
+    case 'meeting_confirmed': return <Link className="h-4 w-4" />; // Symbole de lien pour match accepté
+    default: return <Info className="h-4 w-4" />;
   }
 };
 
 
-  const getColor = (type: Notification['type']) => {
+  // Dans ton switch getColor
+const getColor = (type: Notification['type']) => {
   switch (type) {
-    case 'new_registration':
-      return 'bg-blue-100 text-blue-600';
-    case 'new_match':
-      return 'bg-pink-100 text-pink-600';
-    case 'meeting_confirmed':
-      return 'bg-green-100 text-green-600';
-
-    case 'admin_like':
-      return 'bg-purple-100 text-purple-600';
-
-    case 'admin_request_received':
-      return 'bg-orange-100 text-orange-600';
-
-    default:
-      return 'bg-gray-100 text-gray-600';
+    case 'new_registration': return 'bg-blue-100 text-blue-600';
+    case 'admin_like': return 'bg-rose-100 text-rose-600'; // Rose pour les likes
+    case 'admin_request_received': return 'bg-amber-100 text-amber-600'; // Ambre pour les demandes
+    case 'meeting_confirmed': return 'bg-green-100 text-green-700 font-bold'; // Vert pour l'action admin
+    default: return 'bg-gray-100 text-gray-600';
   }
 };
 

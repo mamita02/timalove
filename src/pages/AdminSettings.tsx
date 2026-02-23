@@ -116,7 +116,8 @@ export const AdminSettings = () => {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="confirm-password">Confirmer le mot de passe</Label>
+                <Label htmlFor="confirm-password">Confirmer le mot de passe 
+                   </Label>
                 <Input 
                     id="confirm-password" 
                     type="password" 

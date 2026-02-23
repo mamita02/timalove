@@ -8,7 +8,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 const MemberDetail = () => {
-  const { id } = useParams();
+  // id vient de l'URL (ex: /profile/123-abc) -> C'est le to_user_id
+  const { id } = useParams(); 
   const navigate = useNavigate();
   
   const [member, setMember] = useState<any>(null);
@@ -28,43 +29,60 @@ const MemberDetail = () => {
         setCurrentUserId(userId);
 
         if (id) {
+          // 1. On charge le profil du membre
           const { data: memberData } = await supabase
-            .from('registrations')
-            .select('*')
-            .eq('id', id)
-            .single();
+          .from('registrations')
+          .select('*')
+          .eq('id', id)
+          .single();
 
           if (memberData) {
             setMember(memberData);
             setActivePhoto(memberData.photo_url);
 
+            // 2. Si on est connecté, on vérifie les interactions
             if (userId) {
-              const { data: request } = await supabase
+              // Vérification des requêtes (Demandes d'amis)
+              const { data: requests } = await supabase
                 .from('requests')
                 .select('id')
                 .eq('sender_id', userId)
-                .eq('receiver_id', id)
-                .maybeSingle();
-              if (request) setHasRequested(true);
+                .eq('receiver_id', id); // On utilise l'ID de l'URL
+              
+              if (requests && requests.length > 0) setHasRequested(true);
 
-              const { data: like } = await supabase
+              // Vérification des likes (notifications existantes)
+              const { data: likes } = await supabase
                 .from('notifications')
                 .select('id')
                 .eq('from_user_id', userId)
-                .eq('to_user_id', id)
-                .eq('type', 'like')
-                .maybeSingle();
-              if (like) setHasLiked(true);
+                .eq('to_user_id', id) // On utilise l'ID de l'URL
+                .eq('type', 'like');
+
+              if (likes && likes.length > 0) setHasLiked(true);
             }
           }
         }
 
+        // 3. Vérification du statut Premium de l'utilisateur connecté
         if (userId) {
-          const { data: myProfile } = await supabase.from('registrations').select('gender').eq('id', userId).single();
-          const { data: sub } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+          // On utilise maybeSingle pour éviter l'erreur 406 si le profil n'existe pas encore dans 'profiles'
+          const { data: sub } = await supabase
+            .from('profiles')
+            .select('subscription_status, subscription_end_date')
+            .eq('id', userId)
+            .maybeSingle();
+
+          const { data: myProfile } = await supabase
+            .from('registrations')
+            .select('gender')
+            .eq('id', userId)
+            .maybeSingle();
 
           const isFemale = myProfile?.gender?.toLowerCase().startsWith('f');
-          const isPremium = sub?.subscription_status === 'active' && new Date(sub.subscription_end_date) > new Date();
+          const isPremium = sub?.subscription_status === 'active' && 
+                            sub?.subscription_end_date && 
+                            new Date(sub.subscription_end_date) > new Date();
           
           setHasPaid(isFemale || isPremium);
         }
@@ -77,73 +95,76 @@ const MemberDetail = () => {
     initPage();
   }, [id]);
 
-  const handleLike = async () => {
-    if (!currentUserId) return toast.error("Connectez-vous pour aimer ce profil.");
+  // ✅ CORRECTION MAJEURE DU HANDLE LIKE
+ const handleLike = async () => {
+    if (!currentUserId || !id) return toast.error("Action impossible.");
+
     const previousState = hasLiked;
     setHasLiked(!previousState);
 
-    if (!previousState) {
-      const { error } = await supabase.from('notifications').insert({
-        from_user_id: currentUserId,
-        to_user_id: member.id,
-        message: "vous a envoyé un coup de cœur !",
-        type: 'like'
-      });
-      if (error) {
-        setHasLiked(previousState);
-        toast.error("Erreur lors de l'envoi");
-      } else {
-        // Récupérer le nom de l'utilisateur qui like
-        const { data: likerData } = await supabase
-          .from('registrations')
-          .select('first_name, last_name')
-          .eq('id', currentUserId)
-          .single();
-        
-        const likerName = likerData ? `${likerData.first_name} ${likerData.last_name}` : 'Un membre';
-        const likedName = `${member.first_name} ${member.last_name}`;
-        
-        
-        
+    try {
+      if (!previousState) {
+        // Insertion Coup de coeur (Type aligné sur notification.ts)
+        const { error } = await supabase
+          .from('notifications')
+          .insert({
+            from_user_id: currentUserId,
+            to_user_id: id,
+            message: "a eu un coup de cœur pour votre profil !",
+            type: 'admin_like',
+            is_read: false
+          });
+
+        if (error) throw error;
         toast.success("Coup de cœur envoyé ! 💖");
-      }
-    } else {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('from_user_id', currentUserId)
-        .eq('to_user_id', member.id)
-        .eq('type', 'like');
-      if (error) {
-        setHasLiked(previousState);
-        toast.error("Erreur lors de la suppression");
       } else {
-        toast.info("Coup de cœur retiré");
+        // Suppression
+        const { error } = await supabase
+          .from('notifications')
+          .delete()
+          .eq('from_user_id', currentUserId)
+          .eq('to_user_id', id)
+          .eq('type', 'admin_like');
+        
+        if (error) throw error;
+        toast.info("Coup de cœur retiré.");
       }
+    } catch (error: any) {
+      setHasLiked(previousState);
+      toast.error("Une erreur est survenue.");
     }
   };
 
   const handleDemande = async () => {
-    if (!currentUserId) return toast.error("Connectez-vous pour envoyer une demande.");
-    if (hasRequested) return;
+    if (!currentUserId || !id) return toast.error("Veuillez vous connecter.");
+    if (currentUserId === id) return toast.error("Action impossible.");
 
-    const { error } = await supabase.from('requests').insert({
-      sender_id: currentUserId,
-      receiver_id: member.id,
-      status: 'pending'
-    });
+    try {
+      // 🚀 INSERTION SIMPLE
+      // Le trigger SQL s'occupe de créer la notification 'admin_request_received'
+      // L'ID est généré automatiquement par la DB
+      const { error } = await supabase
+        .from("requests")
+        .insert({
+          sender_id: currentUserId,
+          receiver_id: id,
+          status: "pending"
+        });
 
-    if (!error) {
-      await supabase.from('notifications').insert({
-        from_user_id: currentUserId,
-        to_user_id: member.id,
-        message: "souhaite entrer en contact avec vous !",
-        type: 'request_received'
-      });
+      if (error) {
+        if (error.code === '23505') { // Code d'erreur pour contrainte d'unicité (déjà envoyé)
+            setHasRequested(true);
+            return toast.info("Demande déjà envoyée.");
+        }
+        throw error;
+      }
+
       setHasRequested(true);
-      toast.success(`Demande envoyée à ${member.first_name} ! 🚀`);
-    } else {
-      toast.error("Erreur lors de l'envoi de la demande");
+      toast.success("Demande envoyée 🚀");
+
+    } catch (err: any) {
+      console.error("Erreur demande:", err);
+      toast.error("Erreur lors de l'envoi.");
     }
   };
 
@@ -156,7 +177,7 @@ const MemberDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F3F0]"> {/* FOND DE PAGE BEIGE SABLE */}
+    <div className="min-h-screen bg-[#F7F3F0]">
       <Navbar />
       <main className="pt-28 pb-12 container mx-auto px-4 max-w-6xl">
         <button 
@@ -166,21 +187,20 @@ const MemberDetail = () => {
           <ChevronLeft size={18} /> Retour aux profils
         </button>
 
-        {/* BLOC CENTRAL BLANC SUR FOND BEIGE */}
         <div className="bg-white rounded-[3rem] border border-stone-100 shadow-sm overflow-hidden flex flex-col md:flex-row p-4 md:p-12 gap-8 md:gap-16 items-start">
           
           {/* PHOTOS */}
           <div className="flex flex-col gap-4 w-full md:w-[380px] flex-shrink-0">
             <div className="aspect-[3/4] relative rounded-[2.5rem] overflow-hidden bg-slate-50 shadow-lg border border-rose-100">
               <img 
-      src={activePhoto || "/placeholder.jpg"} 
-      className={`w-full h-full object-cover transition-all duration-500 ${
-        !hasPaid
-          ? "blur-lg scale-80"
-          : "blur-0 scale-100 group-hover:scale-100"
-      }`} 
-      alt={member.first_name} 
-    />
+                src={activePhoto || "/placeholder.jpg"} 
+                className={`w-full h-full object-cover transition-all duration-500 ${
+                  !hasPaid
+                    ? "blur-lg scale-80"
+                    : "blur-0 scale-100 group-hover:scale-100"
+                }`} 
+                alt={member.first_name} 
+              />
               {!hasPaid && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/30 backdrop-blur-[2px]">
                   <div className="bg-white/60 p-4 rounded-full mb-4 text-rose-500 shadow-sm"><User size={32} /></div>
@@ -191,7 +211,7 @@ const MemberDetail = () => {
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              {[member.photo_url, member.photo_url_2, member.photo_url_3].filter(Boolean).map((url, idx) => (
+              {[member.photo_url, member.photo_url_2, member.photo_url_3].filter(Boolean).map((url: string, idx: number) => (
                 <button 
                   key={idx}
                   onClick={() => setActivePhoto(url)}

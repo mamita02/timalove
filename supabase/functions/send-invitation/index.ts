@@ -1,117 +1,128 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from '../_shared/cors.ts';
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 serve(async (req) => {
-  // Gestion CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+  // ✅ Preflight CORS
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { to, recipientName, partnerName, date, meetLink, calendarLink } = await req.json();
+    const { name, email, message } = await req.json();
 
-    const resend_api_key = Deno.env.get('resend_api_key');
-
-    if (!resend_api_key) {
-      throw new Error('resend_api_key manquante dans Vault');
+    // ✅ Validation
+    if (!name || !email || !message) {
+      return new Response(
+        JSON.stringify({ error: "Tous les champs sont obligatoires." }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
-    // Formater la date
-    const dateObj = new Date(date);
-    const formattedDate = dateObj.toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
-    // Envoyer l'email via Resend
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
+    if (!RESEND_API_KEY) {
+      console.error("RESEND_API_KEY manquante");
+      return new Response(
+        JSON.stringify({ error: "Configuration serveur invalide." }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // ===============================
+    // 📩 EMAIL ADMIN
+    // ===============================
+    const adminEmail = await fetch("https://api.resend.com/emails", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${resend_api_key}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'TimaLove Match <noreply@tima-love.com>',
-        to: [to],
-        subject: '💕 Votre rencontre TimaLove Match est planifiée !',
+        from: "Tima Love <contact@tima-love.com>",
+        to: ["contact@tima-love.com"],
+        reply_to: email,
+        subject: `Nouveau message de ${name}`,
         html: `
-          <p>Bonjour ${name},</p>
-          <p>Nous avons bien reçu votre message.</p>
-          <p>Nous vous répondrons rapidement.</p>
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-              .content { background: #f9f9f9; padding: 30px; }
-              .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 10px 5px; }
-              .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <h1>💕 Votre rencontre est planifiée !</h1>
-              </div>
-              <div class="content">
-                <p>Bonjour <strong>${recipientName}</strong>,</p>
-                <p>Nous avons le plaisir de vous annoncer qu'une rencontre a été organisée avec <strong>${partnerName}</strong>.</p>
-                <p><strong>📅 Date :</strong> ${formattedDate}</p>
-                <p><strong>🎥 Lien Google Meet :</strong></p>
-                <a href="${meetLink}" class="button">Rejoindre la réunion</a>
-                <p><strong>📆 Ajouter à votre calendrier :</strong></p>
-                <a href="${calendarLink}" class="button">Ajouter au calendrier</a>
-                <p>Nous vous souhaitons une excellente rencontre ! 💖</p>
-                <p>Cordialement,<br/>L'équipe TimaLove Match</p>
-              </div>
-              <div class="footer">
-                <p>TimaLove Match - L'amour à portée de main</p>
-                <p><a href="https://tima-love.com">tima-love.com</a></p>
-              </div>
-            </div>
-          </body>
-          </html>
+          <h2>Nouveau message depuis tima-love.com</h2>
+          <p><strong>Nom :</strong> ${name}</p>
+          <p><strong>Email :</strong> ${email}</p>
+          <p><strong>Message :</strong></p>
+          <p>${message}</p>
         `,
       }),
     });
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(JSON.stringify(errorData));
+    const adminResult = await adminEmail.json();
+
+    if (!adminEmail.ok) {
+      console.error("Erreur Resend Admin:", adminResult);
+      return new Response(
+        JSON.stringify({ error: "Erreur envoi email admin." }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
-    const responseData = await res.json();
+    // ⏳ Délai pour éviter Rate Limit (429)
+    await new Promise((resolve) => setTimeout(resolve, 700));
+
+    // ===============================
+    // 📬 EMAIL CLIENT
+    // ===============================
+    const clientEmail = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "Tima Love <contact@tima-love.com>",
+        to: [email],
+        subject: "Merci pour votre message 💌",
+        html: `
+          <p>Bonjour ${name},</p>
+          <p>Nous avons bien reçu votre message.</p>
+          <p>Nous vous répondrons rapidement.</p>
+          <br/>
+          <p>— L’équipe Tima Love</p>
+        `,
+      }),
+    });
+
+    const clientResult = await clientEmail.json();
+
+    if (!clientEmail.ok) {
+      console.error("Erreur Resend Client:", clientResult);
+    }
 
     return new Response(
-      JSON.stringify({ success: true, data: responseData }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json' 
-        } 
+      JSON.stringify({ success: true }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
 
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error("Erreur générale:", error);
+
     return new Response(
-      JSON.stringify({ 
-        success: false,
-        error: error.message || 'Erreur inconnue'
-      }),
-      { 
+      JSON.stringify({ error: "Erreur serveur." }),
+      {
         status: 500,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json' 
-        } 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   }
