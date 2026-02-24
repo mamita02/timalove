@@ -135,39 +135,20 @@ export const RegistrationSection = () => {
       photoUrl = urlData.publicUrl;
 
       // 3. CRÉATION DU COMPTE AUTH
-      const hasEmail = data.email && data.email.trim() !== "";
+      // Si pas d'email fourni, on génère un faux email à partir du téléphone
+      const phoneClean = data.phone.replace(/\s+/g, '');
+      const emailForAuth = (data.email && data.email.trim() !== "")
+        ? data.email.trim().toLowerCase()
+        : `${phoneClean}@tima-love.com`;
 
-      // Normaliser le téléphone en format E.164 (+221XXXXXXXXX)
-      const normalizePhone = (phone: string) => {
-        const digits = phone.replace(/\s+/g, '').replace(/[^+\d]/g, '');
-        if (digits.startsWith('+')) return digits;
-        // Sénégal par défaut si 9 chiffres sans indicatif
-        if (digits.length === 9) return `+221${digits}`;
-        return `+${digits}`;
-      };
-
-      let authData: any;
-      if (hasEmail) {
-        const { data: d, error: authError } = await supabase.auth.signUp({
-          email: data.email!.trim().toLowerCase(),
-          password: data.password,
-        });
-        if (authError) {
-          if (authError.message.includes('already registered')) throw new Error(`Ce compte (${data.email}) existe déjà. Veuillez vous connecter.`);
-          throw authError;
-        }
-        authData = d;
-      } else {
-        const phoneE164 = normalizePhone(data.phone);
-        const { data: d, error: authError } = await supabase.auth.signUp({
-          phone: phoneE164,
-          password: data.password,
-        });
-        if (authError) {
-          if (authError.message.includes('already registered')) throw new Error(`Ce numéro (${data.phone}) est déjà utilisé. Veuillez vous connecter.`);
-          throw authError;
-        }
-        authData = d;
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: emailForAuth,
+        password: data.password,
+      });
+      if (authError) {
+        const identifier = (data.email && data.email.trim() !== "") ? data.email : data.phone;
+        if (authError.message.includes('already registered')) throw new Error(`Ce compte (${identifier}) existe déjà. Veuillez vous connecter.`);
+        throw authError;
       }
 
       // 4. INSERTION DANS LA TABLE DES PROFILS
