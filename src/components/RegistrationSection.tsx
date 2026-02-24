@@ -52,7 +52,7 @@ export const RegistrationSection = () => {
   const [photoError, setPhotoError] = useState(false); // État pour l'erreur photo
   const navigate = useNavigate();
 
-  const form = useForm<RegistrationFormData>({
+ const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
       firstName: "",
