@@ -60,12 +60,16 @@ export const RegistrationSection = () => {
       email: "",
       password: "",
       phone: "",
-      age: undefined,
+      // On met une chaîne vide ici pour éviter le warning React sur l'input non-contrôlé
+      age: "" as unknown as number, 
       city: "",
       presentation: "",
       lookingFor: "",
       country: "Sénégal",
       residence_country: "",
+      // Ajoute aussi ces deux-là pour être tranquille avec les menus déroulants
+      gender: "male", 
+      religion: "Musulmane",
     },
   });
 
@@ -123,37 +127,37 @@ export const RegistrationSection = () => {
       if (authError) throw authError;
 
       // 4. INSERTION DANS LA TABLE DES PROFILS
-      if (authData.user) {
-        const { error: dbError } = await supabase
-          .from('registrations')
-          .insert([
-            {
-              id: authData.user.id,
-              first_name: data.firstName,
-              last_name: data.lastName,
-              email: data.email,
-              phone: data.phone,
-              age: data.age,
-              city: data.city,
-              gender: data.gender,
-              religion: data.religion,
-              country: data.country,
-              residence_country: data.residence_country,
-              photo_url: photoUrl, // C'est cette URL qui sera utilisée
-              presentation: data.presentation,
-              looking_for: data.lookingFor,
-              status: 'approved',
-            }
-          ]);
+      // 4. MISE À JOUR DU PROFIL (L'ID existe déjà grâce à ton trigger SQL)
+        if (authData.user) {
+          const { error: dbError } = await supabase
+            .from('registrations')
+            .upsert({ // On utilise upsert pour éviter le conflit d'ID
+                id: authData.user.id,
+                first_name: data.firstName,
+                last_name: data.lastName,
+                email: data.email,
+                phone: data.phone,
+                age: data.age,
+                city: data.city,
+                gender: data.gender,
+                religion: data.religion,
+                country: data.country,
+                residence_country: data.residence_country,
+                photo_url: photoUrl,
+                presentation: data.presentation,
+                looking_for: data.lookingFor,
+                status: 'approved',
+                role: 'member' // Optionnel si déjà géré par défaut
+              }, { onConflict: 'id' }); // On précise de fusionner si l'ID existe déjà
 
-        if (dbError) throw dbError;
+          if (dbError) throw dbError;
 
-        toast({ 
-          title: "Inscription réussie !", 
-          description: "Bienvenue sur TimaLove." 
-        });
-        navigate("/login");
-      }
+          toast({ 
+            title: "Inscription réussie !", 
+            description: "Bienvenue sur TimaLove." 
+          });
+          navigate("/login");
+        }
 
     } catch (error: any) {
       console.error(error);
