@@ -17,20 +17,32 @@ export const UserLogin = () => {
     setLoading(true);
 
     try {
-      // Détecter si c'est un email ou un numéro de téléphone
+      // Normaliser le téléphone en format E.164
+      const normalizePhone = (phone: string) => {
+        const digits = phone.replace(/\s+/g, '').replace(/[^+\d]/g, '');
+        if (digits.startsWith('+')) return digits;
+        if (digits.length === 9) return `+221${digits}`; // Sénégal par défaut
+        return `+${digits}`;
+      };
+
       const isEmail = identifier.includes('@');
-      
-      // Si c'est un téléphone, convertir en email fictif
-      const emailForAuth = isEmail 
-        ? identifier.trim().toLowerCase()
-        : `${identifier.replace(/\s+/g, '')}@tima-love.com`;
+      let authResult;
 
-      // 1. Authentification Supabase
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: emailForAuth,
-        password,
-      });
+      if (isEmail) {
+        authResult = await supabase.auth.signInWithPassword({
+          email: identifier.trim().toLowerCase(),
+          password,
+        });
+      } else {
+        // Connexion par téléphone natif Supabase
+        const phoneE164 = normalizePhone(identifier);
+        authResult = await supabase.auth.signInWithPassword({
+          phone: phoneE164,
+          password,
+        });
+      }
 
+      const { data: authData, error: authError } = authResult;
       if (authError) throw new Error("Identifiant ou mot de passe incorrect.");
 
       // 2. Vérification du statut d'approbation
