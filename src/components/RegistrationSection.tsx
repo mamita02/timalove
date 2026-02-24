@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Camera, Check, Loader2 } from "lucide-react"; // Ajout de AlertCircle
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import * as z from "zod";
 
 // UI Components
@@ -41,6 +41,9 @@ const registrationSchema = z.object({
   city: z.string().min(2, "La ville est requise"),
   presentation: z.string().min(50, "50 caractères minimum"),
   lookingFor: z.string().min(30, "30 caractères minimum"),
+  acceptTerms: z.literal(true, {
+  errorMap: () => ({ message: "Vous devez accepter les conditions" }),
+  }),
 });
 
 type RegistrationFormData = z.infer<typeof registrationSchema>;
@@ -70,6 +73,7 @@ export const RegistrationSection = () => {
       // Ajoute aussi ces deux-là pour être tranquille avec les menus déroulants
       gender: "male", 
       religion: "Musulmane",
+      acceptTerms: false as unknown as true, // On initialise à false
     },
   });
 
@@ -365,7 +369,33 @@ export const RegistrationSection = () => {
                       </FormItem>
                     )} />
                   </div>
-
+                        {/* CASE À COCHER : CONSENTEMENT */}
+                        <FormField
+                          control={form.control}
+                          name="acceptTerms"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-2">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="h-4 w-4 mt-1 rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <Label className="text-[11px] text-slate-600 cursor-pointer">
+                                  J'accepte les{" "}
+                                  <Link to="/legal" className="text-primary underline hover:text-primary/80">
+                                    conditions d'utilisation
+                                  </Link>{" "}
+                                  et je confirme que ma démarche est sérieuse en vue d'un mariage.
+                                </Label>
+                                <FormMessage className="text-[10px]" />
+                              </div>
+                            </FormItem>
+                          )}
+                        />
                   <div className="pt-4">
                     <Button 
                       type="submit" 
