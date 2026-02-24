@@ -56,6 +56,7 @@ export const RegistrationSection = () => {
   const [photoError, setPhotoError] = useState(false);
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
+  const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY as string | undefined;
   const navigate = useNavigate();
 
  const form = useForm<RegistrationFormData>({
@@ -101,8 +102,8 @@ export const RegistrationSection = () => {
       return;
     }
 
-    // 2. VÉRIFICATION RECAPTCHA
-    if (!recaptchaToken) {
+    // 2. VÉRIFICATION RECAPTCHA (seulement si la clé est configurée)
+    if (recaptchaSiteKey && !recaptchaToken) {
       toast({
         title: "Vérification requise",
         description: "Veuillez cocher la case \"Je ne suis pas un robot\".",
@@ -392,16 +393,18 @@ export const RegistrationSection = () => {
                       </FormItem>
                     )} />
                   </div>
-                  {/* RECAPTCHA */}
-                  <div className="flex justify-center pt-2">
-                    <ReCAPTCHA
-                      ref={recaptchaRef}
-                      sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-                      onChange={(token) => setRecaptchaToken(token)}
-                      onExpired={() => setRecaptchaToken(null)}
-                      hl="fr"
-                    />
-                  </div>
+                  {/* RECAPTCHA — affiché seulement si la clé est présente */}
+                  {recaptchaSiteKey && (
+                    <div className="flex justify-center pt-2">
+                      <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={recaptchaSiteKey}
+                        onChange={(token) => setRecaptchaToken(token)}
+                        onExpired={() => setRecaptchaToken(null)}
+                        hl="fr"
+                      />
+                    </div>
+                  )}
 
                         {/* CASE À COCHER : CONSENTEMENT */}
                         <FormField
