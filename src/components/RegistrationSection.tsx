@@ -95,8 +95,6 @@ export const RegistrationSection = () => {
         description: "Une photo de profil est obligatoire pour l'inscription.",
         variant: "destructive",
       });
-      // On remonte en haut de page pour montrer l'erreur
-      window.scrollTo({ top: 0, behavior: 'smooth' });
       return; 
     }
 
@@ -238,6 +236,11 @@ export const RegistrationSection = () => {
                 <span className={`text-[9px] uppercase font-bold tracking-tighter ${photoError ? 'text-red-500' : 'text-slate-400'}`}>
                   Photo de profil (Obligatoire) *
                 </span>
+                {photoError && (
+                  <p className="text-red-500 text-xs mt-1 font-medium">
+                    Une photo de profil est obligatoire pour l'inscription
+                  </p>
+                )}
               </div>
               {/* --- FIN PHOTO --- */}
 
