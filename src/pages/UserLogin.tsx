@@ -7,33 +7,40 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export const UserLogin = () => {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState(""); // email ou téléphone
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
- const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Détecter si c'est un email ou un numéro de téléphone
+      const isEmail = identifier.includes('@');
+      
+      // Si c'est un téléphone, convertir en email fictif
+      const emailForAuth = isEmail 
+        ? identifier.trim().toLowerCase()
+        : `${identifier.replace(/\s+/g, '')}@tima-love.com`;
+
       // 1. Authentification Supabase
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
+        email: emailForAuth,
         password,
       });
 
-      if (authError) throw new Error("Email ou mot de passe incorrect.");
+      if (authError) throw new Error("Identifiant ou mot de passe incorrect.");
 
       // 2. Vérification du statut d'approbation
       const { data: profile, error: dbError } = await supabase
         .from('registrations')
-        .select('status, first_name') // ✅ Changé 'firstName' en 'first_name' pour correspondre au SQL
-        .eq('email', email)
+        .select('status, first_name')
+        .eq('id', authData.user.id)
         .single();
 
       if (dbError || profile?.status !== 'approved') {
-        // ❌ Déconnexion si non approuvé
         await supabase.auth.signOut();
         toast({
           title: "Compte non activé",
@@ -44,9 +51,8 @@ export const UserLogin = () => {
         return;
       }
 
-      // ✅ Succès !
       toast({
-        title: `Bienvenue ${profile.first_name} !`, // ✅ Utilisation de first_name ici aussi
+        title: `Bienvenue ${profile.first_name} !`,
         description: "Connexion réussie.",
       });
       navigate("/profile");
@@ -76,12 +82,12 @@ export const UserLogin = () => {
 
         <form onSubmit={handleLogin} className="space-y-4 text-left">
           <div className="space-y-2">
-            <label className="text-xs font-bold uppercase text-slate-400 ml-1">Email</label>
+            <label className="text-xs font-bold uppercase text-slate-400 ml-1">Email ou Téléphone</label>
             <Input 
-              type="email" 
-              placeholder="votre@email.com" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
+              type="text" 
+              placeholder="Email ou numéro de téléphone" 
+              value={identifier} 
+              onChange={(e) => setIdentifier(e.target.value)} 
               className="rounded-2xl h-12 border-slate-100 focus:border-primary"
               required 
             />

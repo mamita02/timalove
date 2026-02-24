@@ -24,7 +24,7 @@ import { Textarea } from "./ui/textarea";
 const registrationSchema = z.object({
   firstName: z.string().min(2, "Le prénom est requis"),
   lastName: z.string().min(2, "Le nom est requis"),
-  email: z.string().email("Email invalide").toLowerCase(),
+  email: z.string().email("Email invalide").toLowerCase().optional().or(z.literal("")),
   password: z.string().min(6, "Le mot de passe doit faire au moins 6 caractères"),
   gender: z.enum(["male", "female"], { 
     required_error: "Veuillez sélectionner votre sexe" 
@@ -121,41 +121,46 @@ export const RegistrationSection = () => {
       photoUrl = urlData.publicUrl;
 
       // 3. CRÉATION DU COMPTE AUTH
+      // Si email vide, on génère un email fictif basé sur le téléphone
+      const emailForAuth = data.email && data.email.trim() !== "" 
+        ? data.email 
+        : `${data.phone.replace(/\s+/g, '')}@tima-love.com`;
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
+        email: emailForAuth,
         password: data.password,
       });
 
       if (authError) {
         if (authError.message.includes('already registered') || authError.message.includes('User already registered')) {
-          throw new Error(`L'email ${data.email} est déjà utilisé. Veuillez vous connecter ou utiliser un autre email.`);
+          const identifier = data.email && data.email.trim() !== "" ? data.email : data.phone;
+          throw new Error(`Ce compte (${identifier}) existe déjà. Veuillez vous connecter.`);
         }
         throw authError;
       }
 
       // 4. INSERTION DANS LA TABLE DES PROFILS
-      // 4. MISE À JOUR DU PROFIL (L'ID existe déjà grâce à ton trigger SQL)
-        if (authData.user) {
-          const { error: dbError } = await supabase
-            .from('registrations')
-            .upsert({ // On utilise upsert pour éviter le conflit d'ID
-                id: authData.user.id,
-                first_name: data.firstName,
-                last_name: data.lastName,
-                email: data.email,
-                phone: data.phone,
-                age: data.age,
-                city: data.city,
-                gender: data.gender,
-                religion: data.religion,
-                country: data.country,
-                residence_country: data.residence_country,
-                photo_url: photoUrl,
-                presentation: data.presentation,
-                looking_for: data.lookingFor,
-                status: 'approved',
-                role: 'member' // Optionnel si déjà géré par défaut
-              }, { onConflict: 'id' }); // On précise de fusionner si l'ID existe déjà
+      if (authData.user) {
+        const { error: dbError } = await supabase
+          .from('registrations')
+          .upsert({
+              id: authData.user.id,
+              first_name: data.firstName,
+              last_name: data.lastName,
+              email: data.email && data.email.trim() !== "" ? data.email : null,
+              phone: data.phone,
+              age: data.age,
+              city: data.city,
+              gender: data.gender,
+              religion: data.religion,
+              country: data.country,
+              residence_country: data.residence_country,
+              photo_url: photoUrl,
+              presentation: data.presentation,
+              looking_for: data.lookingFor,
+              status: 'approved',
+              role: 'member'
+            }, { onConflict: 'id' });
 
           if (dbError) throw dbError;
 
@@ -281,8 +286,8 @@ export const RegistrationSection = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <FormField control={form.control} name="email" render={({ field }) => (
                       <FormItem className="space-y-1">
-                        <Label className="text-[10px] uppercase text-slate-400 ml-1">Email</Label>
-                        <FormControl><Input type="email" placeholder="Email" className="h-10 border-slate-200 rounded-xl" {...field} /></FormControl>
+                        <Label className="text-[10px] uppercase text-slate-400 ml-1">Email (Optionnel)</Label>
+                        <FormControl><Input type="email" placeholder="Email (optionnel)" className="h-10 border-slate-200 rounded-xl" {...field} /></FormControl>
                         <FormMessage className="text-[10px]" />
                       </FormItem>
                     )} />
