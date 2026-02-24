@@ -1,8 +1,9 @@
 import rencontreImg from "@/assets/mainsmaries.png";
 import { toast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, Camera, Check, Loader2 } from "lucide-react"; // Ajout de AlertCircle
-import { useState } from "react";
+import { AlertCircle, Camera, Check, Loader2 } from "lucide-react";
+import { useRef, useState } from "react";
+import ReCAPTCHA from "react-google-recaptcha";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import * as z from "zod";
@@ -52,7 +53,9 @@ export const RegistrationSection = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [photoError, setPhotoError] = useState(false); // État pour l'erreur photo
+  const [photoError, setPhotoError] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
   const navigate = useNavigate();
 
  const form = useForm<RegistrationFormData>({
@@ -95,7 +98,17 @@ export const RegistrationSection = () => {
         description: "Une photo de profil est obligatoire pour l'inscription.",
         variant: "destructive",
       });
-      return; 
+      return;
+    }
+
+    // 2. VÉRIFICATION RECAPTCHA
+    if (!recaptchaToken) {
+      toast({
+        title: "Vérification requise",
+        description: "Veuillez cocher la case \"Je ne suis pas un robot\".",
+        variant: "destructive",
+      });
+      return;
     }
 
     setIsSubmitting(true);
@@ -173,6 +186,8 @@ export const RegistrationSection = () => {
 
     } catch (error: any) {
       console.error(error);
+      recaptchaRef.current?.reset();
+      setRecaptchaToken(null);
       toast({
         title: "Erreur",
         description: error.message || "Une erreur est survenue.",
@@ -377,6 +392,17 @@ export const RegistrationSection = () => {
                       </FormItem>
                     )} />
                   </div>
+                  {/* RECAPTCHA */}
+                  <div className="flex justify-center pt-2">
+                    <ReCAPTCHA
+                      ref={recaptchaRef}
+                      sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                      onChange={(token) => setRecaptchaToken(token)}
+                      onExpired={() => setRecaptchaToken(null)}
+                      hl="fr"
+                    />
+                  </div>
+
                         {/* CASE À COCHER : CONSENTEMENT */}
                         <FormField
                           control={form.control}
