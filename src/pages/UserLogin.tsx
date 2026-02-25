@@ -17,32 +17,27 @@ export const UserLogin = () => {
     setLoading(true);
 
     try {
-      // Normaliser le téléphone en format E.164
-      const normalizePhone = (phone: string) => {
-        const digits = phone.replace(/\s+/g, '').replace(/[^+\d]/g, '');
-        if (digits.startsWith('+')) return digits;
-        if (digits.length === 9) return `+221${digits}`; // Sénégal par défaut
-        return `+${digits}`;
-      };
-
       const isEmail = identifier.includes('@');
-      let authResult;
+      let emailForAuth: string;
 
       if (isEmail) {
-        authResult = await supabase.auth.signInWithPassword({
-          email: identifier.trim().toLowerCase(),
-          password,
-        });
+        emailForAuth = identifier.trim().toLowerCase();
       } else {
-        // Connexion par téléphone natif Supabase
-        const phoneE164 = normalizePhone(identifier);
-        authResult = await supabase.auth.signInWithPassword({
-          phone: phoneE164,
-          password,
-        });
+        // Téléphone → chercher l'email réel dans registrations, sinon faux email
+        const phoneClean = identifier.replace(/\s+/g, '');
+        const { data: reg } = await supabase
+          .from('registrations')
+          .select('email')
+          .eq('phone', phoneClean)
+          .maybeSingle();
+
+        emailForAuth = reg?.email ?? `${phoneClean}@tima-love.com`;
       }
 
-      const { data: authData, error: authError } = authResult;
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: emailForAuth,
+        password,
+      });
       if (authError) throw new Error("Identifiant ou mot de passe incorrect.");
 
       // 2. Vérification du statut d'approbation
