@@ -23,15 +23,17 @@ export const UserLogin = () => {
       if (isEmail) {
         emailForAuth = identifier.trim().toLowerCase();
       } else {
-        // Téléphone → chercher l'email réel dans registrations, sinon faux email
+        // Téléphone → chercher l'email réel dans registrations
+        // Cherche avec le numéro tel quel ET sans espaces pour compatibilité
         const phoneClean = identifier.replace(/\s+/g, '');
         const { data: reg } = await supabase
           .from('registrations')
           .select('email')
-          .eq('phone', phoneClean)
+          .or(`phone.eq.${phoneClean},phone.eq.${identifier.trim()},phone.ilike.%${phoneClean}%`)
           .maybeSingle();
 
-        emailForAuth = reg?.email ?? `${phoneClean}@tima-love.com`;
+        // Si l'utilisateur avait un vrai email → l'utiliser, sinon faux email généré
+        emailForAuth = (reg?.email) ? reg.email : `${phoneClean}@tima-love.com`;
       }
 
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({

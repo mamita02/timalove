@@ -160,7 +160,7 @@ export const RegistrationSection = () => {
               first_name: data.firstName,
               last_name: data.lastName,
               email: data.email && data.email.trim() !== "" ? data.email.trim().toLowerCase() : null,
-              phone: data.phone,
+              phone: phoneClean,
               age: data.age,
               city: data.city,
               gender: data.gender,
