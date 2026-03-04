@@ -15,6 +15,7 @@ import MemberDetail from "./pages/MemberDetail";
 import NotFound from "./pages/NotFound";
 import QuiSuisJe from "./pages/QuiSuisJe";
 import RegistrationSuccess from "./pages/RegistrationSuccess";
+import { UpdatePassword } from "./pages/UpdatePassword";
 import { UserLogin } from "./pages/UserLogin";
 import UserProfile from "./pages/UserProfile";
 
@@ -45,6 +46,7 @@ const App = () => (
           <Route path="/login" element={<UserLogin />} />
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/profile/:id" element={<MemberDetail />} />
+          <Route path="/update-password" element={<UpdatePassword />} />
 
           {/* ADMIN LOGIN */}
           <Route path="/admin/login" element={<AdminPage />} />
