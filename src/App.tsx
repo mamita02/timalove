@@ -1,3 +1,6 @@
+import { useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,13 +32,30 @@ import { AdminSettings } from "./pages/AdminSettings";
 import Matching from "./pages/Matching";
 
 const queryClient = new QueryClient();
+const AuthListener = () => {
+  const navigate = useNavigate();
 
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        navigate("/update-password");
+      }
+    });
+
+    return () => {
+      data.subscription.unsubscribe();
+    };
+  }, [navigate]);
+
+  return null;
+};
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <AuthListener />
         <Routes>
 
           {/* PUBLIC */}
