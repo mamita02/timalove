@@ -1,7 +1,8 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
-import { Activity, Clock, Heart, MapPin, UserPlus, Zap } from "lucide-react";
+import { Activity, Clock, Download, Heart, MapPin, UserPlus, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const AdminActivities = () => {
@@ -9,6 +10,66 @@ export const AdminActivities = () => {
   const [recentUsers, setRecentUsers] = useState<any[]>([]);
   const [stats, setStats] = useState({ likes: 0, requests: 0 });
   const [loading, setLoading] = useState(true);
+
+  const escapeCsvValue = (value: unknown) => {
+    const text = value == null ? "" : String(value);
+    return `"${text.replace(/"/g, '""')}"`;
+  };
+
+  const exportUsersCsv = async () => {
+    const { data, error } = await supabase
+      .from('registrations')
+      .select('first_name, last_name, email, phone, age, city, country, residence_country, gender, religion, status, created_at')
+      .neq('role', 'admin')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error("Erreur export utilisateurs:", error);
+      return;
+    }
+
+    const headers = [
+      "Prénom",
+      "Nom",
+      "Email",
+      "Téléphone",
+      "Âge",
+      "Ville",
+      "Pays",
+      "Pays de résidence",
+      "Genre",
+      "Religion",
+      "Statut",
+      "Date inscription",
+    ];
+
+    const rows = (data || []).map((user: any) => [
+      user.first_name,
+      user.last_name,
+      user.email,
+      user.phone,
+      user.age,
+      user.city,
+      user.country,
+      user.residence_country,
+      user.gender,
+      user.religion,
+      user.status,
+      user.created_at ? new Date(user.created_at).toLocaleString('fr-FR') : "",
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map(escapeCsvValue).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `utilisateurs_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -169,9 +230,14 @@ export const AdminActivities = () => {
                 <UserPlus className="h-5 w-5 text-blue-500" />
                 20 derniers inscrits
               </CardTitle>
-              <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100">
-                {recentUsers.length} profils
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+                  {recentUsers.length} profils
+                </Badge>
+                <Button variant="outline" size="sm" onClick={exportUsersCsv}>
+                  <Download className="h-4 w-4 mr-1" /> Exporter
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="p-0 flex-1 overflow-y-auto">
