@@ -1,3 +1,4 @@
+import logo from "@/assets/logo.png"; // Utilisation de l'alias @ pour pointer vers src/assets
 import { Link } from 'react-router-dom';
 
 const Legal = () => {
@@ -13,7 +14,7 @@ const Legal = () => {
       <div className="max-w-4xl mx-auto">
         
         {/* Bouton Retour */}
-        <Link to="/" className="inline-flex items-center text-[#D48B8B] hover:text-[#B56B6B] mb-8 transition-colors">
+        <Link to="/" className="inline-flex items-center text-[#D48B8B] hover:text-[#B56B6B] mb-8 transition-colors font-medium">
           <span className="mr-2">←</span> Retour à l'accueil
         </Link>
 
@@ -21,15 +22,17 @@ const Legal = () => {
           
           {/* Header avec Logo */}
           <div className="bg-[#F9E8E2] p-10 text-center">
-            {/* Emplacement du Logo */}
             <div className="mb-6 flex justify-center">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm border border-[#F3E5E0]">
-                {/* Remplace l'icône par ton image : <img src="/logo.png" alt="TimaLove" /> */}
-                <span className="text-3xl text-[#D48B8B] font-serif"><img src="src/assets/TYMA LOVEPlan de travail 2.png" alt="TimaLove" /></span>
+              <div className="w-28 h-28 bg-white rounded-full flex items-center justify-center shadow-sm border border-[#F3E5E0] overflow-hidden p-3">
+                <img 
+                  src={logo} 
+                  alt="TimaLove Logo" 
+                  className="w-full h-full object-contain"
+                />
               </div>
             </div>
             <h1 className="text-4xl font-serif text-[#D48B8B] mb-2 italic">TimaLove Match</h1>
-            <p className="text-[#8B7E74] uppercase tracking-widest text-sm">Mentions Légales & Conditions Générales</p>
+            <p className="text-[#8B7E74] uppercase tracking-widest text-sm font-semibold">Mentions Légales & Conditions Générales</p>
           </div>
 
           <div className="p-8 md:p-12">
@@ -71,7 +74,7 @@ const Legal = () => {
               </ul>
             </nav>
 
-            {/* Contenu */}
+            {/* Contenu des Sections */}
             <div className="space-y-16">
               
               <section id="mentions">
@@ -82,14 +85,14 @@ const Legal = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
                     <h3 className="font-semibold mb-2">Éditeur</h3>
-                    <p>TimaLove </p>
-                    <p>Fatimata Ba </p>
-                    <p>0033 77 970 9465 </p>
+                    <p>TimaLove</p>
+                    <p>Fatimata Ba</p>
+                    <p>0033 77 970 9465</p>
                   </div>
                   <div>
                     <h3 className="font-semibold mb-2">Conception</h3>
-                    <p>Agence MCE [cite: 17]</p>
-                    <p>Dakar, Sénégal </p>
+                    <p>Agence MCE</p>
+                    <p>Dakar, Sénégal</p>
                   </div>
                 </div>
               </section>
@@ -99,7 +102,11 @@ const Legal = () => {
                   <span className="mr-4 text-sm bg-[#F9E8E2] px-3 py-1 rounded-full text-[#D48B8B]">02</span>
                   Concept & Positionnement
                 </h2>
-                <p>TimaLove propose une mise en relation amoureuse sérieuse orientée vers le mariage[cite: 33]. Notre service est strictement humain et non automatisé : chaque étape est validée manuellement par l'administratrice[cite: 34].</p>
+                <p className="leading-relaxed">
+                  TimaLove propose une mise en relation amoureuse sérieuse orientée vers le mariage. 
+                  Notre service est strictement humain et non automatisé : chaque étape est validée 
+                  manuellement par l'administratrice pour garantir la qualité des profils.
+                </p>
               </section>
 
               <section id="photos" className="bg-[#FDF8F5] p-8 rounded-2xl border border-[#F9E8E2]">
@@ -107,7 +114,11 @@ const Legal = () => {
                   <span className="mr-4 text-sm bg-white px-3 py-1 rounded-full text-[#D48B8B]">03</span>
                   Système de Photos
                 </h2>
-                <p>Pour garantir l'exclusivité et la sécurité de nos membres, les photos sont affichées de manière volontairement floue[cite: 56]. Le défloutage est strictement conditionné à un paiement sécurisé[cite: 57].</p>
+                <p className="leading-relaxed">
+                  Pour garantir l'exclusivité et la sécurité de nos membres, les photos sont affichées 
+                  de manière volontairement floue. Le défloutage est strictement conditionné à un 
+                  paiement sécurisé et à la validation du profil.
+                </p>
               </section>
 
               <section id="paiement">
@@ -115,7 +126,10 @@ const Legal = () => {
                   <span className="mr-4 text-sm bg-[#F9E8E2] px-3 py-1 rounded-full text-[#D48B8B]">04</span>
                   Conditions de Paiement
                 </h2>
-                <p>Un tarif de lancement est appliqué pour accéder aux visuels de la galerie[cite: 58]. Ce paiement unique est sécurisé et non remboursable une fois l'accès aux photos activé.</p>
+                <p className="leading-relaxed">
+                  Un tarif de lancement est appliqué pour accéder aux visuels de la galerie. 
+                  Ce paiement unique est sécurisé et non remboursable une fois l'accès aux photos activé.
+                </p>
               </section>
 
               <section id="responsabilite">
@@ -123,7 +137,11 @@ const Legal = () => {
                   <span className="mr-4 text-sm bg-[#F9E8E2] px-3 py-1 rounded-full text-[#D48B8B]">05</span>
                   Responsabilité
                 </h2>
-                <p>Conformément à notre charte, TimaLove est soumis à une clause de non-obligation de résultat[cite: 49]. Nous fournissons les outils et l'accompagnement, mais l'aboutissement d'une union dépend de l'interaction humaine entre les membres.</p>
+                <p className="leading-relaxed">
+                  Conformément à notre charte, TimaLove est soumis à une clause de non-obligation 
+                  de résultat. Nous fournissons les outils et l'accompagnement, mais l'aboutissement 
+                  d'une union dépend de l'interaction humaine sincère entre les membres.
+                </p>
               </section>
 
               <section id="confidentialite">
@@ -131,14 +149,19 @@ const Legal = () => {
                   <span className="mr-4 text-sm bg-[#F9E8E2] px-3 py-1 rounded-full text-[#D48B8B]">06</span>
                   Confidentialité
                 </h2>
-                <p>Toutes les données confiées lors de l'inscription sont traitées avec une confidentialité totale[cite: 27]. Le site intègre une sécurité anti-spam et des sauvegardes régulières pour protéger votre vie privée[cite: 71].</p>
+                <p className="leading-relaxed">
+                  Toutes les données confiées lors de l'inscription sont traitées avec une 
+                  confidentialité totale. Le site intègre une sécurité anti-spam et des 
+                  sauvegardes régulières pour protéger votre vie privée et vos échanges.
+                </p>
               </section>
 
             </div>
           </div>
 
+          {/* Footer de la page */}
           <div className="bg-[#F9E8E2] p-8 text-center text-sm text-[#8B7E74]">
-            &copy; 2026 TimaLove Match. Tous droits réservés. 
+            &copy; 2026 TimaLove Match. Tous droits réservés.
           </div>
         </div>
       </div>

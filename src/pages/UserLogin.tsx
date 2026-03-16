@@ -11,6 +11,41 @@ export const UserLogin = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [isResetMode, setIsResetMode] = useState(false);
+
+  // Retrouve l'email associé à un identifiant (email ou téléphone)
+  const resolveEmail = async (id: string): Promise<string> => {
+    if (id.includes('@')) return id.trim().toLowerCase();
+    const phoneClean = id.replace(/\s+/g, '');
+    const { data: reg } = await supabase
+      .from('registrations')
+      .select('email')
+      .or(`phone.eq.${phoneClean},phone.eq.${id.trim()},phone.ilike.%${phoneClean}%`)
+      .maybeSingle();
+    return reg?.email ?? `${phoneClean}@tima-love.com`;
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const email = await resolveEmail(identifier);
+      if (email.endsWith('@tima-love.com')) {
+        toast({ title: "Impossible", description: "Vous n'avez pas d'email, contactez l'administrateur.", variant: "destructive" });
+        return;
+      }
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
+      if (error) throw error;
+      toast({ title: "Email envoyé", description: "Vérifiez votre boîte mail pour réinitialiser votre mot de passe." });
+      setIsResetMode(false);
+    } catch (error: any) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,7 +124,7 @@ export const UserLogin = () => {
         <h1 className="text-3xl font-serif text-slate-900 mb-2">Bienvenue sur Timalove</h1>
         <p className="text-slate-500 text-sm mb-8">Connectez-vous pour voir vos matchs</p>
 
-        <form onSubmit={handleLogin} className="space-y-4 text-left">
+        <form onSubmit={isResetMode ? handleForgotPassword : handleLogin} className="space-y-4 text-left">
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase text-slate-400 ml-1">Email ou Téléphone</label>
             <Input 
@@ -102,22 +137,37 @@ export const UserLogin = () => {
             />
           </div>
           
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase text-slate-400 ml-1">Mot de passe</label>
-            <Input 
-              type="password" 
-              placeholder="••••••••" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              className="rounded-2xl h-12 border-slate-100 focus:border-primary"
-              required 
-            />
-          </div>
+          {!isResetMode && (
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase text-slate-400 ml-1">Mot de passe</label>
+              <Input 
+                type="password" 
+                placeholder="••••••••" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                className="rounded-2xl h-12 border-slate-100 focus:border-primary"
+                required 
+              />
+              <button 
+                type="button"
+                onClick={() => setIsResetMode(true)}
+                className="text-xs text-primary hover:underline ml-1"
+              >
+                Mot de passe oublié ?
+              </button>
+            </div>
+          )}
 
-          <Button type="submit" className="w-full h-12 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold mt-4" disabled={loading}>
-            {loading ? <Loader2 className="animate-spin" /> : "Se connecter"}
-          </Button>
-        </form>
+  <Button type="submit" className="w-full h-12 rounded-2xl bg-primary text-white font-bold mt-4" disabled={loading}>
+    {loading ? <Loader2 className="animate-spin" /> : (isResetMode ? "Envoyer le lien" : "Se connecter")}
+  </Button>
+  
+  {isResetMode && (
+    <button type="button" onClick={() => setIsResetMode(false)} className="w-full text-sm text-slate-400">
+      Retour à la connexion
+    </button>
+  )}
+</form>
       </div>
     </div>
   );

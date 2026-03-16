@@ -176,6 +176,24 @@ export const RegistrationSection = () => {
 
           if (dbError) throw dbError;
 
+          try {
+            const { error: notifyError } = await supabase.functions.invoke('notify-admin-new-member', {
+              body: {
+                firstName: data.firstName,
+                lastName: data.lastName,
+                email: data.email?.trim() || null,
+                phone: phoneClean,
+                city: data.city,
+              },
+            });
+
+            if (notifyError) {
+              console.warn('Notification admin non envoyée:', notifyError.message);
+            }
+          } catch (notifyException) {
+            console.warn('Exception envoi notification admin:', notifyException);
+          }
+
           toast({ 
             title: "Inscription réussie !", 
             description: "Bienvenue sur TimaLove." 

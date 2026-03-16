@@ -18,18 +18,30 @@ const AdminPage = () => {
   // 1. Vérification des droits Admin
   const checkIsAdmin = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('admins') 
-        .select('id')       
+      const { data: adminData, error: adminError } = await supabase
+        .from('admins')
+        .select('id')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (error || !data) {
-        await supabase.auth.signOut();
-        return false;
+      if (!adminError && !!adminData) {
+        return true;
       }
-      return true;
+
+      const { data: registrationData, error: registrationError } = await supabase
+        .from('registrations')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (!registrationError && registrationData?.role === 'admin') {
+        return true;
+      }
+
+      await supabase.auth.signOut();
+      return false;
     } catch (err) {
+      await supabase.auth.signOut();
       return false;
     }
   };
