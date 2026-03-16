@@ -177,18 +177,32 @@ export const RegistrationSection = () => {
           if (dbError) throw dbError;
 
           try {
-            const { error: notifyError } = await supabase.functions.invoke('notify-admin-new-member', {
-              body: {
+            // Appel sans vérification JWT (la fonction a --no-verify-jwt)
+            // Mais il faut quand même passer un header Authorization (non-vérifié)
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+            const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+            const response = await fetch(`${supabaseUrl}/functions/v1/notify-admin-new-member`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${anonKey}`,
+              },
+              body: JSON.stringify({
                 firstName: data.firstName,
                 lastName: data.lastName,
                 email: data.email?.trim() || null,
                 phone: phoneClean,
                 city: data.city,
-              },
+              }),
             });
 
-            if (notifyError) {
-              console.warn('Notification admin non envoyée:', notifyError.message);
+            if (!response.ok) {
+              const errorData = await response.json();
+              console.warn('Notification admin non envoyée:', response.status, errorData);
+            } else {
+              const successData = await response.json();
+              console.log('Notification admin envoyée:', successData);
             }
           } catch (notifyException) {
             console.warn('Exception envoi notification admin:', notifyException);
