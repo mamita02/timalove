@@ -2,9 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { Loader2, Lock } from "lucide-react";
+import { Loader2, Lock, Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // Import nécessaire pour la redirection
+import { useNavigate } from "react-router-dom";
 
 const AdminPage = () => {
   const [loading, setLoading] = useState(true);
@@ -14,6 +14,9 @@ const AdminPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+
+  // 👁️ état pour afficher / masquer le mot de passe
+  const [showPassword, setShowPassword] = useState(false);
 
   // 1. Vérification des droits Admin
   const checkIsAdmin = async (userId: string) => {
@@ -46,7 +49,7 @@ const AdminPage = () => {
     }
   };
 
-  // 2. Si déjà connecté, on redirige directement vers les inscriptions
+  // 2. Vérifier si déjà connecté
   useEffect(() => {
     const checkCurrentSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -61,7 +64,7 @@ const AdminPage = () => {
     checkCurrentSession();
   }, [navigate]);
 
-  // 3. Gestion du formulaire de connexion
+  // 3. Connexion
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthLoading(true);
@@ -86,12 +89,11 @@ const AdminPage = () => {
       
       if (adminStatus) {
         toast({ title: "Bienvenue Mame Faatu", description: "Connexion réussie." });
-        // REDIRECTION VERS L'INTERFACE ADMIN
         navigate("/admin/inscriptions", { replace: true });
       } else {
         toast({ 
           title: "Accès refusé", 
-          description: "Ce compte n'est pas répertorié comme admin.", 
+          description: "Ce compte n'est pas admin.", 
           variant: "destructive" 
         });
         setAuthLoading(false);
@@ -108,14 +110,20 @@ const AdminPage = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#F5EEFA] px-4">
       <div className="bg-white p-8 rounded-[40px] shadow-2xl w-full max-w-md border border-white animate-fade-up">
+        
         <div className="flex justify-center mb-6">
           <div className="p-4 bg-primary/10 rounded-full">
             <Lock className="text-primary" size={30} />
           </div>
         </div>
-        <h1 className="text-3xl font-serif text-primary text-center mb-8">Espace Privé</h1>
+
+        <h1 className="text-3xl font-serif text-primary text-center mb-8">
+          Espace Privé
+        </h1>
         
         <form onSubmit={handleLogin} className="space-y-4">
+          
+          {/* EMAIL */}
           <Input 
             type="email" 
             placeholder="Email Admin" 
@@ -124,17 +132,36 @@ const AdminPage = () => {
             className="rounded-xl h-12"
             required 
           />
-          <Input 
-            type="password" 
-            placeholder="Mot de passe" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            className="rounded-xl h-12"
-            required 
-          />
-          <Button type="submit" className="w-full h-12 rounded-xl bg-primary text-lg hover:bg-primary/90" disabled={authLoading}>
+
+          {/* PASSWORD + OEIL */}
+          <div className="relative">
+            <Input 
+              type={showPassword ? "text" : "password"}
+              placeholder="Mot de passe" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              className="rounded-xl h-12 pr-10"
+              required 
+            />
+            
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+
+          {/* BUTTON */}
+          <Button 
+            type="submit" 
+            className="w-full h-12 rounded-xl bg-primary text-lg hover:bg-primary/90" 
+            disabled={authLoading}
+          >
             {authLoading ? <Loader2 className="animate-spin" /> : "Entrer"}
           </Button>
+
         </form>
       </div>
     </div>
