@@ -472,6 +472,15 @@ export const RegistrationSection = () => {
                       {isSubmitting ? <Loader2 className="h-5 w-4 animate-spin" /> : "Valider l'inscription"}
                     </Button>
                   </div>
+
+                  <div className="mt-6 pt-4 border-t border-slate-100 text-center">
+                    <p className="text-sm text-slate-600">
+                      Vous avez déjà un compte ?{" "}
+                      <Link to="/login" className="text-primary font-semibold hover:underline">
+                        Se connecter
+                      </Link>
+                    </p>
+                  </div>
                 </div>
               </form>
             </Form>

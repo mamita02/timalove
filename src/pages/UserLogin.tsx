@@ -168,6 +168,19 @@ export const UserLogin = () => {
     </button>
   )}
 </form>
+
+        <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+          <p className="text-sm text-slate-600">
+            Pas encore inscrit ?{" "}
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="text-primary font-semibold hover:underline"
+            >
+              S'inscrire ici
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );
