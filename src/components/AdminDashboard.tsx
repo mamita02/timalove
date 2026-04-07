@@ -38,7 +38,7 @@ export const InscriptionsManager = () => {
   // ... tes autres useState
 const [uploading, setUploading] = useState(false); // <--- AJOUTE ÇA
 const [transactions, setTransactions] = useState<any[]>([]);
-
+const [activeTab, setActiveTab] = useState<"all" | "male" | "female">("all");
 
   // --- 1. CHARGEMENT DES DONNÉES ---
   const loadRegistrations = async () => {
@@ -76,12 +76,21 @@ const [transactions, setTransactions] = useState<any[]>([]);
 
   // --- 2. LOGIQUE DE FILTRAGE (Déclarée avant les stats) ---
   const filteredRegistrations = registrations.filter((reg) => {
-    const matchCountry = reg.country?.toLowerCase().includes(searchCountry.toLowerCase()) || 
-                         reg.residenceCountry?.toLowerCase().includes(searchCountry.toLowerCase());
-    const matchReligion = reg.religion?.toLowerCase().includes(searchReligion.toLowerCase());
-    const matchAge = searchAge ? reg.age?.toString() === searchAge : true;
-    return matchCountry && matchReligion && matchAge;
-  });
+  const matchCountry = reg.country?.toLowerCase().includes(searchCountry.toLowerCase()) || 
+                       reg.residenceCountry?.toLowerCase().includes(searchCountry.toLowerCase());
+
+  const matchReligion = reg.religion?.toLowerCase().includes(searchReligion.toLowerCase());
+
+  const matchAge = searchAge ? reg.age?.toString() === searchAge : true;
+
+  // 🔥 NOUVEAU FILTRE PAR ONGLET
+  const matchGender =
+    activeTab === "all"
+      ? true
+      : reg.gender?.toLowerCase() === activeTab;
+
+  return matchCountry && matchReligion && matchAge && matchGender;
+});
 
   const stats = {
     total: registrations.length,
@@ -216,6 +225,15 @@ const [transactions, setTransactions] = useState<any[]>([]);
       toast({ title: "Erreur", description: "La sauvegarde a échoué.", variant: "destructive" });
     }
   };
+  const totalCount = registrations.length;
+
+const maleCount = registrations.filter(
+  (r) => r.gender?.toLowerCase() === "male"
+).length;
+
+const femaleCount = registrations.filter(
+  (r) => r.gender?.toLowerCase() === "female"
+).length;
   return (
     <div className="space-y-6">
   {/* HEADER AVEC BOUTON DÉCONNEXION */}
@@ -307,7 +325,28 @@ const [transactions, setTransactions] = useState<any[]>([]);
       />
     </div>
   </div>
+<div className="flex gap-2 mb-4">
+  <Button
+    variant={activeTab === "all" ? "default" : "outline"}
+    onClick={() => setActiveTab("all")}
+  >
+    Tous ({totalCount})
+  </Button>
 
+  <Button
+    variant={activeTab === "male" ? "default" : "outline"}
+    onClick={() => setActiveTab("male")}
+  >
+    👨 Hommes ({maleCount})
+  </Button>
+
+  <Button
+    variant={activeTab === "female" ? "default" : "outline"}
+    onClick={() => setActiveTab("female")}
+  >
+    👩 Femmes ({femaleCount})
+  </Button>
+</div>
      <Card>
         <CardContent className="pt-6">
           {loading ? (
