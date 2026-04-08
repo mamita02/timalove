@@ -15,6 +15,7 @@ const navLinks = [
   { href: "/qui-suis-je", label: "Qui suis-je ?" },
   { href: "/?scroll=concept", label: "Comment ça marche" },
   { href: "/?scroll=temoignages", label: "Avis" },
+  { href: "/?scroll=Coaching", label: "Coaching" },
   { href: "/?scroll=contact", label: "Contact" },
 ];
 
