@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 import { AboutSection } from "@/components/AboutSection";
+import { CoachingSection } from "@/components/Coaching";
 import { ConceptSection } from "@/components/ConceptSection";
 import { ContactSection } from "@/components/ContactSection";
 import { Footer } from "@/components/Footer";
@@ -50,6 +51,11 @@ const Index = () => {
         <section id="gallery">
           <GallerySection />
         </section>
+
+        <section id="Coaching">
+          <CoachingSection />
+        </section>
+
 
         <section id="temoignages">
           <Testimonials />
