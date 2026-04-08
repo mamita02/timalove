@@ -25,6 +25,7 @@ import UserProfile from "./pages/UserProfile";
 
 // PAGES ADMIN
 import { AdminActivities } from "./components/admin/AdminActivities";
+import { AdminCoaching } from "./pages/AdminCoaching";
 import AdminInscriptions from "./pages/AdminInscriptions";
 import AdminPage from "./pages/AdminPage";
 import { AdminPaiements } from "./pages/AdminPaiements";
@@ -90,6 +91,7 @@ const App = () => (
               <Route path="paiements" element={<AdminPaiements />} />
               <Route path="avis" element={<AdminReviews />} />
               <Route path="parametres" element={<AdminSettings />} />
+              <Route path="coaching" element={<AdminCoaching />} />
             </Route>
           </Route>
 
