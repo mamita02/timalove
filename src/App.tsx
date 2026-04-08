@@ -1,11 +1,11 @@
-import { useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { useNavigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { supabase } from "@/lib/supabase";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter, Outlet, Route, Routes, useNavigate } from "react-router-dom";
+
 
 // ADMIN LAYOUT
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -21,6 +21,7 @@ import RegistrationSuccess from "./pages/RegistrationSuccess";
 import { UpdatePassword } from "./pages/UpdatePassword";
 import { UserLogin } from "./pages/UserLogin";
 import UserProfile from "./pages/UserProfile";
+
 
 // PAGES ADMIN
 import { AdminActivities } from "./components/admin/AdminActivities";
@@ -67,6 +68,7 @@ const App = () => (
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/profile/:id" element={<MemberDetail />} />
           <Route path="/update-password" element={<UpdatePassword />} />
+          
 
           {/* ADMIN LOGIN */}
           <Route path="/admin/login" element={<AdminPage />} />
@@ -101,3 +103,4 @@ const App = () => (
 );
 
 export default App;
+
