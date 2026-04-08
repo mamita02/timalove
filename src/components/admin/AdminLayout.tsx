@@ -51,6 +51,12 @@ const menuItems = [
     description: "Créer des matchs",
   },
   {
+    title: "Coaching",
+    href: "/admin/Coaching",
+    icon: UserCheck,
+    description: "Vos Coaching",
+  },
+  {
     title: "Paiements",
     href: "/admin/paiements",
     icon: CreditCard,
