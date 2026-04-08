@@ -1,9 +1,9 @@
-import { supabase } from "@/lib/supabase";
 import {
-    ArrowRight, CalendarHeart, CheckCircle2, Clock,
-    CreditCard, Heart, Info, Link, Loader2, Mail, Shield, X,
+  ArrowRight, CalendarHeart, CheckCircle2, Clock,
+  CreditCard, Heart, Info, Link, Loader2, Mail, Shield, X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 /* ══════════════════════════════════════════ TYPES */
 type RadioGroup = "genre" | "situation";
@@ -52,18 +52,23 @@ const STEPS = [
 ];
 
 /* ══════════════════════════════════════════ MODAL PRINCIPAL */
-interface CoachingFormModalProps { isOpen: boolean; onClose: () => void; }
+interface CoachingFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  initialStep?: number;
+}
 
-export const CoachingFormModal = ({ isOpen, onClose }: CoachingFormModalProps) => {
+export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: CoachingFormModalProps) => {
   const [form, setForm]         = useState<FormData>(EMPTY);
   const [errors, setErrors]     = useState<FormErrors>({});
-  const [step, setStep]         = useState(1);
+  const [step, setStep]         = useState(initialStep);
   const [visible, setVisible]   = useState(false);
   const [loading, setLoading]   = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
+      setStep(initialStep);
       document.body.style.overflow = "hidden";
       requestAnimationFrame(() => setVisible(true));
     } else {
@@ -75,7 +80,7 @@ export const CoachingFormModal = ({ isOpen, onClose }: CoachingFormModalProps) =
       }, 300);
       return () => clearTimeout(t);
     }
-  }, [isOpen]);
+  }, [isOpen, initialStep]);
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -590,7 +595,7 @@ const F = ({ label, error, children }: { label: string; error?: string; children
 );
 
 const base = (err?: boolean): React.CSSProperties => ({
-  background: err ? "rgba(220,90,90,0.04)" : "#ffffff",
+  backgroundColor: err ? "rgba(220,90,90,0.04)" : "#ffffff",  // ✅ backgroundColor pas background
   border: `1px solid ${err ? "rgba(200,80,80,0.4)" : "rgba(220,180,170,0.55)"}`,
   borderRadius: "8px", padding: "8px 12px",
   color: "#3d1818", fontSize: "13px", fontWeight: 400,
@@ -614,10 +619,14 @@ const FS = ({ value, onChange, hasError, children }: {
   hasError?: boolean; children: React.ReactNode;
 }) => (
   <select value={value} onChange={onChange} style={{
-    ...base(hasError), appearance: "none",
+    ...base(hasError),
+    appearance: "none",
     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c97a6a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
-    backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center",
-    paddingRight: "32px", cursor: "pointer",
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "right 12px center",
+    backgroundSize: "auto",   // ✅ évite le conflit shorthand
+    paddingRight: "32px",
+    cursor: "pointer",
   }}>
     {children}
   </select>
