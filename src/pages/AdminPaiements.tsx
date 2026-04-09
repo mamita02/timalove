@@ -27,7 +27,7 @@ export const AdminPaiements = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      /* Transactions + inscription (abonnement) + coaching_requests (coaching) */
+      /* 1. Transactions + relations */
       const { data: txData, error: txError } = await supabase
         .from("transactions")
         .select(`
@@ -39,16 +39,24 @@ export const AdminPaiements = () => {
 
       if (txError) throw txError;
 
-      const { data: profilesData, error: profileError } = await supabase
-        .from("profiles")
-        .select("id, subscription_end_date, subscription_status");
+      /* 2. Profiles — on cherche par TOUS les user_id présents dans les transactions
+            (transactions.user_id référence registrations.id qui = auth.users.id = profiles.id
+             dans un setup Supabase standard) */
+      const userIds = [...new Set((txData ?? []).map((t: any) => t.user_id).filter(Boolean))];
 
-      if (profileError) throw profileError;
+      let profilesMap = new Map<string, any>();
 
-      const profilesMap = new Map();
-      profilesData?.forEach((p: any) => profilesMap.set(p.id, p));
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profileError } = await supabase
+          .from("profiles")
+          .select("id, subscription_end_date, subscription_status")
+          .in("id", userIds);
 
-      const enriched = txData?.map((tx: any) => {
+        if (profileError) throw profileError;
+        profilesData?.forEach((p: any) => profilesMap.set(p.id, p));
+      }
+
+      const enriched = (txData ?? []).map((tx: any) => {
         const isCoaching = tx.type === "coaching";
         const reg        = tx.registrations;
         const coaching   = tx.coaching_requests;
@@ -61,15 +69,15 @@ export const AdminPaiements = () => {
         return {
           ...tx,
           userName,
-          coachingEmail:  coaching?.email        || null,
-          coachingTheme:  coaching?.theme        || null,
-          coachingDate:   coaching?.requested_date || null,
+          coachingEmail:      coaching?.email           || null,
+          coachingTheme:      coaching?.theme           || null,
+          coachingDate:       coaching?.requested_date  || null,
           subscriptionEnd:    profile?.subscription_end_date || null,
-          subscriptionStatus: profile?.subscription_status   || "inactive",
+          subscriptionStatus: profile?.subscription_status  || "inactive",
         };
       });
 
-      setTransactions(enriched || []);
+      setTransactions(enriched);
     } catch (err) {
       console.error("Erreur AdminPaiements:", err);
       toast({ title: "Erreur", description: "Impossible de charger les paiements.", variant: "destructive" });
@@ -102,7 +110,7 @@ export const AdminPaiements = () => {
     const paid = transactions.filter(t => t.status?.toLowerCase().trim() === "paid");
     const now  = Date.now();
     return {
-      revenue:        paid.reduce((s, t) => s + (t.amount || 0), 0),
+      revenue:         paid.reduce((s, t) => s + (t.amount || 0), 0),
       revenueCoaching: paid.filter(t => t.type === "coaching").reduce((s, t) => s + (t.amount || 0), 0),
       revenueSub:      paid.filter(t => t.type === "subscription").reduce((s, t) => s + (t.amount || 0), 0),
       active:          transactions.filter(t => t.subscriptionEnd && new Date(t.subscriptionEnd) > new Date()).length,
@@ -116,15 +124,17 @@ export const AdminPaiements = () => {
 
   /* ── Export CSV ── */
   const exportCSV = () => {
-    const headers = ["Type", "Utilisateur", "Email", "Montant", "Statut", "Date", "Détail"];
+    const headers = ["Type", "Utilisateur", "Email", "Montant", "Statut", "Date", "Fin abonnement / Détail"];
     const rows = filteredTransactions.map(t => [
       t.type === "coaching" ? "Coaching" : "Abonnement",
       t.userName,
       t.coachingEmail || "—",
       t.amount,
       t.status,
-      new Date(t.created_at).toLocaleDateString(),
-      t.type === "coaching" ? t.coachingTheme : (t.subscriptionEnd ? new Date(t.subscriptionEnd).toLocaleDateString() : "N/A"),
+      new Date(t.created_at).toLocaleDateString("fr-FR"),
+      t.type === "coaching"
+        ? t.coachingTheme
+        : (t.subscriptionEnd ? new Date(t.subscriptionEnd).toLocaleDateString("fr-FR") : "N/A"),
     ]);
     const csv  = [headers, ...rows].map(r => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -211,7 +221,6 @@ export const AdminPaiements = () => {
 
       {/* Filtres */}
       <div className="flex flex-wrap gap-3 items-center">
-        {/* Filtre type */}
         <div className="flex rounded-lg overflow-hidden border border-rose-200">
           {(["all", "subscription", "coaching"] as TxType[]).map(t => (
             <button
@@ -227,7 +236,6 @@ export const AdminPaiements = () => {
             </button>
           ))}
         </div>
-
         <input type="text" placeholder="Rechercher un nom..."
           value={searchName} onChange={e => setSearchName(e.target.value)}
           className="border border-rose-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-rose-300" />
@@ -246,7 +254,7 @@ export const AdminPaiements = () => {
               <TableHead>Utilisateur</TableHead>
               <TableHead>Montant</TableHead>
               <TableHead>Statut</TableHead>
-              <TableHead>Date</TableHead>
+              <TableHead>Date paiement</TableHead>
               <TableHead>Détail</TableHead>
               <TableHead></TableHead>
             </TableRow>
@@ -267,6 +275,7 @@ export const AdminPaiements = () => {
             ) : (
               filteredTransactions.map((tx) => (
                 <TableRow key={tx.id}>
+
                   {/* Type badge */}
                   <TableCell>
                     <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -279,6 +288,7 @@ export const AdminPaiements = () => {
                     </span>
                   </TableCell>
 
+                  {/* Utilisateur */}
                   <TableCell>
                     <div className="font-medium text-sm">{tx.userName}</div>
                     {tx.coachingEmail && (
@@ -286,10 +296,12 @@ export const AdminPaiements = () => {
                     )}
                   </TableCell>
 
+                  {/* Montant */}
                   <TableCell className="font-medium">
                     {tx.amount?.toLocaleString()} FCFA
                   </TableCell>
 
+                  {/* Statut */}
                   <TableCell>
                     <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
                       tx.status === "paid"
@@ -300,11 +312,12 @@ export const AdminPaiements = () => {
                     </span>
                   </TableCell>
 
+                  {/* Date paiement */}
                   <TableCell className="text-sm text-gray-500">
                     {new Date(tx.created_at).toLocaleDateString("fr-FR")}
                   </TableCell>
 
-                  {/* Détail selon type */}
+                  {/* Détail */}
                   <TableCell className="text-xs text-gray-500">
                     {tx.type === "coaching" ? (
                       <div>
@@ -314,12 +327,29 @@ export const AdminPaiements = () => {
                         )}
                       </div>
                     ) : (
-                      tx.subscriptionEnd
-                        ? `Fin: ${new Date(tx.subscriptionEnd).toLocaleDateString("fr-FR")}`
-                        : "---"
+                      /* ── Abonnement : affiche la date de fin si payé ── */
+                      tx.status === "paid" && tx.subscriptionEnd ? (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
+                            <CalendarCheck size={11} />
+                            Actif jusqu'au
+                          </span>
+                          <span className="font-semibold text-gray-700">
+                            {new Date(tx.subscriptionEnd).toLocaleDateString("fr-FR", {
+                              day: "numeric", month: "long", year: "numeric",
+                            })}
+                          </span>
+                        </div>
+                      ) : tx.status === "paid" ? (
+                        /* Payé mais pas de profil trouvé — ID mismatch possible */
+                        <span className="text-amber-600 text-xs">Date non disponible</span>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )
                     )}
                   </TableCell>
 
+                  {/* Action */}
                   <TableCell>
                     {tx.type === "subscription" && tx.user_id && (
                       <Button variant="ghost" size="sm" onClick={() => forceDeactivate(tx.user_id)}>
@@ -327,6 +357,7 @@ export const AdminPaiements = () => {
                       </Button>
                     )}
                   </TableCell>
+
                 </TableRow>
               ))
             )}
