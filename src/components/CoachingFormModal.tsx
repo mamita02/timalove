@@ -2,7 +2,7 @@ import {
   ArrowRight, CalendarHeart, CheckCircle2, Clock,
   CreditCard, Heart, Info, Link, Loader2, Mail, Shield, X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 /* ══════════════════════════════════════════ TYPES */
@@ -66,15 +66,33 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
   const [loading, setLoading]   = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
 
+  // Mémorise la position de scroll avant ouverture
+  const scrollYRef = useRef(0);
+
   useEffect(() => {
     if (isOpen) {
       setStep(initialStep);
+
+      // ── Fix iOS Safari : position fixed sur le body + mémorisation du scroll ──
+      // overflow: hidden seul ne suffit pas sur iOS — le body doit être "fixed"
+      // pour bloquer le scroll de fond tout en permettant le scroll dans la modal.
+      scrollYRef.current = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top      = `-${scrollYRef.current}px`;
+      document.body.style.width    = "100%";
       document.body.style.overflow = "hidden";
+
       requestAnimationFrame(() => setVisible(true));
     } else {
       setVisible(false);
       const t = setTimeout(() => {
+        // Restaurer le body et repositionner le scroll
+        document.body.style.position = "";
+        document.body.style.top      = "";
+        document.body.style.width    = "";
         document.body.style.overflow = "";
+        window.scrollTo(0, scrollYRef.current);
+
         setForm(EMPTY); setErrors({}); setStep(1);
         setLoading(false); setPayError(null);
       }, 300);
@@ -116,7 +134,6 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
   const handlePay = async () => {
     setLoading(true);
     setPayError(null);
-
     try {
       const { data: coaching, error: insertError } = await supabase
         .from("coaching_requests")
@@ -137,9 +154,8 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
         .select("id")
         .single();
 
-      if (insertError || !coaching) {
+      if (insertError || !coaching)
         throw new Error("Impossible d'enregistrer votre demande. Veuillez réessayer.");
-      }
 
       const { data, error } = await supabase.functions.invoke("naboo-coaching-payment", {
         body: { coachingRequestId: coaching.id },
@@ -148,11 +164,9 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
       if (error) throw new Error(error.message);
 
       const parsed = typeof data === "string" ? JSON.parse(data) : data;
-
       if (!parsed?.url) throw new Error("URL manquante dans la réponse");
 
       window.location.href = parsed.url;
-
     } catch (err: any) {
       console.error("Erreur paiement coaching:", err);
       setPayError(err.message || "Une erreur est survenue. Veuillez réessayer.");
@@ -163,22 +177,49 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
   /* ════════════ RENDU ════════════ */
   return (
     <>
-      {/* Overlay */}
+      {/*
+        ── OVERLAY (fond sombre) ─────────────────────────────
+        z-index 50 — en dessous du wrapper scrollable (z-51)
+        pointer-events-none : il ne capte PAS les events tactiles,
+        le wrapper scrollable les reçoit directement.
+        Le clic pour fermer est géré sur le wrapper lui-même.
+      */}
       <div
-        onClick={onClose}
         className="fixed inset-0 z-50 transition-all duration-300"
         style={{
           background: "rgba(20,6,6,0.6)",
           backdropFilter: visible ? "blur(6px)" : "blur(0px)",
           opacity: visible ? 1 : 0,
+          pointerEvents: "none", // ← ne bloque pas les touches
         }}
       />
 
-      {/* Wrapper scrollable — s'aligne en haut sur mobile, centré sur desktop */}
-      <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-4 py-4 pointer-events-none md:items-center md:py-6">
-        {/* Modal */}
+      {/*
+        ── WRAPPER SCROLLABLE ───────────────────────────────
+        z-[51] > overlay → reçoit tous les événements tactiles en premier.
+
+        Clés iOS Safari :
+        • overflowY "scroll" (pas "auto") : forcé sur iOS
+        • WebkitOverflowScrolling "touch"  : momentum scroll natif iOS
+        • Le body est en position:fixed (voir useEffect) ce qui bloque
+          le scroll de fond sans empêcher le scroll ici.
+
+        Sur desktop : items-center pour centrer verticalement.
+        Sur mobile  : items-start + padding top/bottom pour que la modal
+          commence en haut et qu'on puisse scroller librement.
+      */}
+      <div
+        className="fixed inset-0 z-[51] flex items-start justify-center px-4 py-4 md:items-center md:py-8"
+        style={{
+          overflowY: "scroll",
+          WebkitOverflowScrolling: "touch",
+        }}
+        // Clic sur le fond (hors modal) → ferme
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      >
+        {/* ── MODAL (hauteur naturelle, pas de overflow-hidden) ── */}
         <div
-          className="pointer-events-auto relative w-full rounded-2xl shadow-2xl transition-all duration-300"
+          className="relative w-full rounded-2xl shadow-2xl transition-all duration-300"
           style={{
             maxWidth: "860px",
             background: "#FFF5F5",
@@ -186,13 +227,20 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
             boxShadow: "0 32px 80px rgba(20,6,6,0.45)",
             opacity: visible ? 1 : 0,
             transform: visible ? "translateY(0) scale(1)" : "translateY(20px) scale(0.97)",
+            // Espace sous la modal pour que le dernier champ soit accessible
+            // au-dessus de la barre de navigation Safari
+            marginBottom: "max(16px, env(safe-area-inset-bottom))",
           }}
         >
           {/* Bouton fermer */}
           <button
             onClick={onClose}
             className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-full transition-all hover:scale-110"
-            style={{ background: "rgba(200,100,80,0.1)", border: "1px solid rgba(200,110,95,0.3)", color: "#9a5a50" }}
+            style={{
+              background: "rgba(200,100,80,0.1)",
+              border: "1px solid rgba(200,110,95,0.3)",
+              color: "#9a5a50",
+            }}
           >
             <X size={14} />
           </button>
@@ -201,7 +249,7 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
 
             {/* ── Panneau gauche — masqué sur mobile ── */}
             <div
-              className="hidden md:flex flex-col justify-between px-6 py-8"
+              className="hidden md:flex flex-col justify-between px-6 py-8 rounded-l-2xl"
               style={{ background: "linear-gradient(160deg, #2a1010 0%, #3d1818 100%)" }}
             >
               <div>
@@ -226,10 +274,10 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
                   </div>
                 ))}
               </div>
-
-              {/* Prix */}
-              <div className="mt-6 rounded-xl px-4 py-4"
-                style={{ background: "rgba(200,100,80,0.15)", border: "0.5px solid rgba(220,130,110,0.2)" }}>
+              <div
+                className="mt-6 rounded-xl px-4 py-4"
+                style={{ background: "rgba(200,100,80,0.15)", border: "0.5px solid rgba(220,130,110,0.2)" }}
+              >
                 <p className="text-xs uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>Tarif</p>
                 <p className="mt-1 font-serif text-3xl font-normal" style={{ color: "#e09080" }}>
                   40 <span className="text-base" style={{ color: "rgba(224,144,128,0.55)" }}>€</span>
@@ -249,7 +297,7 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
             {/* ── Panneau droit ── */}
             <div className="flex flex-col px-5 py-6 md:px-7 md:py-7">
 
-              {/* Bandeau header visible uniquement sur mobile */}
+              {/* Header compact — mobile uniquement */}
               <div
                 className="flex md:hidden items-center justify-between mb-4 pb-4"
                 style={{ borderBottom: "1px solid rgba(220,180,170,0.35)" }}
@@ -287,27 +335,13 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
 
               <div className="mt-6 flex-1">
                 {step === 1 && (
-                  <StepForm
-                    form={form} errors={errors}
-                    set={set} setRadio={setRadio}
-                    onNext={handleNext}
-                  />
+                  <StepForm form={form} errors={errors} set={set} setRadio={setRadio} onNext={handleNext} />
                 )}
                 {step === 2 && (
-                  <StepPayment
-                    form={form}
-                    loading={loading}
-                    payError={payError}
-                    onPay={handlePay}
-                    onBack={() => setStep(1)}
-                  />
+                  <StepPayment form={form} loading={loading} payError={payError} onPay={handlePay} onBack={() => setStep(1)} />
                 )}
                 {step === 3 && (
-                  <StepConfirmation
-                    name={`${form.prenom} ${form.nom}`}
-                    email={form.email}
-                    onClose={onClose}
-                  />
+                  <StepConfirmation name={`${form.prenom} ${form.nom}`} email={form.email} onClose={onClose} />
                 )}
               </div>
             </div>
@@ -346,7 +380,8 @@ const Stepper = ({ current }: { current: number }) => (
             </span>
           </div>
           {i < STEPS.length - 1 && (
-            <div className="mb-4 mx-2 flex-1 transition-all duration-500"
+            <div
+              className="mb-4 mx-2 flex-1 transition-all duration-500"
               style={{ height: "1px", background: done ? "rgba(200,120,100,0.5)" : "rgba(200,170,160,0.25)" }}
             />
           )}
@@ -454,49 +489,29 @@ const StepForm = ({ form, errors, set, setRadio, onNext }: StepFormProps) => (
 
 /* ══════════════════════════════════════════ ÉTAPE 2 — PAIEMENT */
 interface StepPaymentProps {
-  form: FormData;
-  loading: boolean;
-  payError: string | null;
-  onPay: () => void;
-  onBack: () => void;
+  form: FormData; loading: boolean; payError: string | null;
+  onPay: () => void; onBack: () => void;
 }
 
 const StepPayment = ({ form, loading, payError, onPay, onBack }: StepPaymentProps) => (
   <div className="flex flex-col gap-4">
-
-    {/* Récapitulatif */}
     <div className="rounded-xl px-4 py-4"
       style={{ background: "rgba(200,100,80,0.07)", border: "1px solid rgba(220,180,170,0.4)" }}>
-      <p className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: "#c97a6a" }}>
-        Récapitulatif
-      </p>
+      <p className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: "#c97a6a" }}>Récapitulatif</p>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-medium" style={{ color: "#3d1818" }}>Coaching vie amoureuse & couple</p>
           <p className="text-xs font-light" style={{ color: "rgba(100,60,60,0.6)" }}>
-            35 min · {form.date
-              ? new Date(form.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
-              : "—"
-            } · {
-              form.creneau === "matin" ? "Matin (9h – 12h)" :
-              form.creneau === "aprem" ? "Après-midi (13h – 17h)" :
-              form.creneau === "soir"  ? "Soir (18h – 20h)" : "—"
-            }
+            35 min · {form.date ? new Date(form.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "—"}{" "}
+            · {form.creneau === "matin" ? "Matin (9h – 12h)" : form.creneau === "aprem" ? "Après-midi (13h – 17h)" : form.creneau === "soir" ? "Soir (18h – 20h)" : "—"}
           </p>
-          <p className="mt-1 text-xs font-light" style={{ color: "rgba(100,60,60,0.5)" }}>
-            Pour : {form.prenom} {form.nom}
-          </p>
+          <p className="mt-1 text-xs font-light" style={{ color: "rgba(100,60,60,0.5)" }}>Pour : {form.prenom} {form.nom}</p>
         </div>
         <p className="font-serif text-2xl font-normal shrink-0" style={{ color: "#c97a6a" }}>40 €</p>
       </div>
     </div>
-
-    {/* Méthodes de paiement */}
-    <div className="rounded-xl px-4 py-4"
-      style={{ background: "#ffffff", border: "1px solid rgba(220,180,170,0.45)" }}>
-      <p className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: "#c97a6a" }}>
-        Moyens de paiement acceptés
-      </p>
+    <div className="rounded-xl px-4 py-4" style={{ background: "#ffffff", border: "1px solid rgba(220,180,170,0.45)" }}>
+      <p className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: "#c97a6a" }}>Moyens de paiement acceptés</p>
       <div className="flex flex-wrap gap-2">
         {["Wave", "Orange Money", "Carte bancaire"].map(m => (
           <span key={m} className="rounded-full px-3 py-1 text-xs font-medium"
@@ -506,41 +521,25 @@ const StepPayment = ({ form, loading, payError, onPay, onBack }: StepPaymentProp
         ))}
       </div>
     </div>
-
-    {/* Message erreur */}
     {payError && (
-      <div className="rounded-xl px-4 py-3"
-        style={{ background: "rgba(220,60,60,0.07)", border: "1px solid rgba(220,80,80,0.3)" }}>
+      <div className="rounded-xl px-4 py-3" style={{ background: "rgba(220,60,60,0.07)", border: "1px solid rgba(220,80,80,0.3)" }}>
         <p className="text-xs font-medium" style={{ color: "#c0504a" }}>⚠️ {payError}</p>
       </div>
     )}
-
-    {/* Info */}
     <div className="flex items-start gap-2.5 rounded-xl px-4 py-3"
       style={{ background: "rgba(200,100,80,0.07)", border: "1px solid rgba(220,180,170,0.35)" }}>
       <Info size={13} className="mt-0.5 shrink-0" style={{ color: "#c97a6a" }} />
       <p className="text-xs leading-relaxed" style={{ color: "rgba(80,40,40,0.65)" }}>
-        Après validation du paiement, un{" "}
-        <strong style={{ color: "#9a4535" }}>email de confirmation</strong> vous sera envoyé avec la{" "}
+        Après validation du paiement, un <strong style={{ color: "#9a4535" }}>email de confirmation</strong> vous sera envoyé avec la{" "}
         <strong style={{ color: "#9a4535" }}>date et l'heure exactes</strong> de votre séance ainsi que le{" "}
         <strong style={{ color: "#9a4535" }}>lien de réunion</strong> sous 48h.
       </p>
     </div>
-
-    {/* Bouton paiement */}
-    <button
-      onClick={onPay}
-      disabled={loading}
+    <button onClick={onPay} disabled={loading}
       className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
-      style={{ background: "linear-gradient(135deg, #c96858 0%, #b85a6a 100%)", boxShadow: "0 8px 24px rgba(180,80,90,0.28)" }}
-    >
-      {loading ? (
-        <><Loader2 size={15} className="animate-spin" /> Redirection en cours...</>
-      ) : (
-        <><CreditCard size={15} /> Procéder au paiement · 40 €</>
-      )}
+      style={{ background: "linear-gradient(135deg, #c96858 0%, #b85a6a 100%)", boxShadow: "0 8px 24px rgba(180,80,90,0.28)" }}>
+      {loading ? <><Loader2 size={15} className="animate-spin" /> Redirection en cours...</> : <><CreditCard size={15} /> Procéder au paiement · 40 €</>}
     </button>
-
     <button onClick={onBack} disabled={loading}
       className="text-xs font-medium transition-all hover:underline disabled:opacity-40"
       style={{ color: "rgba(100,60,60,0.45)", textAlign: "left" }}>
@@ -564,25 +563,11 @@ const StepConfirmation = ({ name, email, onClose }: { name: string; email: strin
     </div>
     <div className="w-full rounded-xl px-5 py-4 text-left"
       style={{ background: "rgba(200,100,80,0.07)", border: "1px solid rgba(220,180,170,0.4)" }}>
-      <p className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: "#c97a6a" }}>
-        Prochaines étapes
-      </p>
+      <p className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: "#c97a6a" }}>Prochaines étapes</p>
       {[
-        {
-          icon: <Mail size={13} />,
-          title: "Email de confirmation",
-          desc: `Un email vient d'être envoyé à ${email} pour confirmer votre réservation.`,
-        },
-        {
-          icon: <CalendarHeart size={13} />,
-          title: "Date & heure confirmées sous 48h",
-          desc: "Notre équipe vous enverra un email avec la date et l'heure exactes de votre séance.",
-        },
-        {
-          icon: <Link size={13} />,
-          title: "Lien de réunion",
-          desc: "Le lien de votre séance en ligne vous sera transmis par email avec les détails de connexion.",
-        },
+        { icon: <Mail size={13} />, title: "Email de confirmation", desc: `Un email vient d'être envoyé à ${email} pour confirmer votre réservation.` },
+        { icon: <CalendarHeart size={13} />, title: "Date & heure confirmées sous 48h", desc: "Notre équipe vous enverra un email avec la date et l'heure exactes de votre séance." },
+        { icon: <Link size={13} />, title: "Lien de réunion", desc: "Le lien de votre séance en ligne vous sera transmis par email avec les détails de connexion." },
       ].map((item, i) => (
         <div key={i} className="mb-3 flex items-start gap-3 last:mb-0">
           <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
