@@ -301,37 +301,37 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
 
               {/* Header compact — mobile uniquement */}
               <div
-                className="flex md:hidden items-center justify-between mb-4 pb-4"
-                style={{ borderBottom: "1px solid rgba(220,180,170,0.35)" }}
+                className="flex md:hidden items-center justify-between mb-3 pb-3"
+                style={{ borderBottom: "1px solid rgba(220,180,170,0.3)" }}
               >
                 <div>
-                  <span className="font-serif text-xs italic tracking-widest" style={{ color: "#c97a6a" }}>
+                  <span className="font-serif italic" style={{ fontSize: "10px", color: "#c97a6a", letterSpacing: "0.08em" }}>
                     ✦ TimaLove
                   </span>
                   <div className="mt-0.5">
-                    <span className="font-serif text-lg font-normal" style={{ color: "#3d1818" }}>Coaching </span>
-                    <span className="font-serif text-lg font-normal italic" style={{ color: "#c97a6a" }}>vie amoureuse</span>
+                    <span className="font-serif font-normal" style={{ fontSize: "14px", color: "#3d1818" }}>Coaching </span>
+                    <span className="font-serif font-normal italic" style={{ fontSize: "14px", color: "#c97a6a" }}>vie amoureuse</span>
                   </div>
-                  <div className="mt-1 flex items-center gap-3">
+                  <div className="mt-1 flex items-center gap-2.5">
                     {[
-                      { icon: <Clock size={11} />, label: "40 min" },
-                      { icon: <CalendarHeart size={11} />, label: "Lun–Sam" },
-                      { icon: <Shield size={11} />, label: "Confidentiel" },
+                      { icon: <Clock size={9} />, label: "40 min" },
+                      { icon: <CalendarHeart size={9} />, label: "Lun–Sam" },
+                      { icon: <Shield size={9} />, label: "Confidentiel" },
                     ].map(({ icon, label }) => (
-                      <div key={label} className="flex items-center gap-1">
+                      <div key={label} className="flex items-center gap-0.5">
                         <span style={{ color: "#c97a6a" }}>{icon}</span>
-                        <span className="text-xs font-light" style={{ color: "rgba(100,60,60,0.5)" }}>{label}</span>
+                        <span style={{ fontSize: "10px", color: "rgba(100,60,60,0.45)", fontWeight: 300 }}>{label}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div
-                  className="rounded-xl px-3 py-2 text-center shrink-0"
-                  style={{ background: "rgba(200,100,80,0.1)", border: "0.5px solid rgba(200,110,95,0.25)" }}
+                  className="rounded-lg px-2.5 py-1.5 text-center shrink-0 ml-3"
+                  style={{ background: "rgba(200,100,80,0.08)", border: "0.5px solid rgba(200,110,95,0.2)" }}
                 >
-                  <p className="font-serif text-2xl font-normal leading-none" style={{ color: "#c97a6a" }}>40 €</p>
-                  <p className="text-xs mt-0.5" style={{ color: "rgba(100,60,60,0.4)" }}>/ séance</p>
-                  <p className="text-xs mt-0.5 font-medium" style={{ color: "rgba(150,80,60,0.6)" }}>≈ 31 000 FCFA</p>
+                  <p className="font-serif font-normal leading-none" style={{ fontSize: "17px", color: "#c97a6a" }}>40 €</p>
+                  <p style={{ fontSize: "9px", marginTop: "2px", color: "rgba(100,60,60,0.38)" }}>/ séance</p>
+                  <p style={{ fontSize: "9px", marginTop: "1px", color: "rgba(150,80,60,0.5)", fontWeight: 500 }}>≈ 31 000 FCFA</p>
                 </div>
               </div>
 
@@ -444,7 +444,7 @@ const StepForm = ({ form, errors, set, setRadio, onNext }: StepFormProps) => (
       <F label="Date souhaitée *" error={errors.date}>
         <FI type="date" min={TODAY} value={form.date} onChange={set("date")} hasError={!!errors.date} />
       </F>
-      <F label="Créneau *" error={errors.creneau}>
+      <F label="Créneau * (heure de France)" error={errors.creneau}>
         <FS value={form.creneau} onChange={set("creneau")} hasError={!!errors.creneau}>
           <option value="" disabled>Choisir</option>
           <option value="matin">Matin (9h – 12h)</option>
