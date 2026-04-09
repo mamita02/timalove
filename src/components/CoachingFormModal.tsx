@@ -264,7 +264,8 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
                   Un espace bienveillant pour avancer sereinement dans votre vie amoureuse.
                 </p>
                 {[
-                  { icon: <Clock size={13} />, label: "35 minutes" },
+                  { icon: <Clock size={13} />, label: "40 minutes" },
+                  { icon: <CalendarHeart size={13} />, label: "Lun – Sam" },
                   { icon: <Shield size={13} />, label: "Validation manuelle" },
                   { icon: <Heart size={13} />, label: "Confidentiel" },
                 ].map(({ icon, label }) => (
@@ -282,7 +283,8 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
                 <p className="mt-1 font-serif text-3xl font-normal" style={{ color: "#e09080" }}>
                   40 <span className="text-base" style={{ color: "rgba(224,144,128,0.55)" }}>€</span>
                 </p>
-                <p className="mt-0.5 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>par séance · 35 min</p>
+                <p className="mt-0.5 text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>par séance · 40 min · Lun–Sam</p>
+                <p className="mt-1 text-xs font-medium" style={{ color: "rgba(224,180,160,0.75)" }}>≈ 31 000 FCFA</p>
                 <div className="mt-3 flex items-start gap-1.5">
                   <Info size={11} className="mt-0.5 shrink-0" style={{ color: "#c97a6a" }} />
                   <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.38)" }}>
@@ -312,7 +314,8 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
                   </div>
                   <div className="mt-1 flex items-center gap-3">
                     {[
-                      { icon: <Clock size={11} />, label: "35 min" },
+                      { icon: <Clock size={11} />, label: "40 min" },
+                      { icon: <CalendarHeart size={11} />, label: "Lun–Sam" },
                       { icon: <Shield size={11} />, label: "Confidentiel" },
                     ].map(({ icon, label }) => (
                       <div key={label} className="flex items-center gap-1">
@@ -328,6 +331,7 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
                 >
                   <p className="font-serif text-2xl font-normal leading-none" style={{ color: "#c97a6a" }}>40 €</p>
                   <p className="text-xs mt-0.5" style={{ color: "rgba(100,60,60,0.4)" }}>/ séance</p>
+                  <p className="text-xs mt-0.5 font-medium" style={{ color: "rgba(150,80,60,0.6)" }}>≈ 31 000 FCFA</p>
                 </div>
               </div>
 
