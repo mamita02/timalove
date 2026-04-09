@@ -118,7 +118,7 @@ export const ContactSection = () => {
               href="tel:+33600000000"
               className="text-primary font-semibold hover:opacity-70 transition-opacity"
             >
-              +33 6 00 00 00 00
+              +003 361 303 14 55
             </a>
           </div>
 
