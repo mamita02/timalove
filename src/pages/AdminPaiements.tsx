@@ -27,11 +27,15 @@ export const AdminPaiements = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      /* 1. Transactions + relations */
+      /* 1. Transactions — subscription_end_date est maintenant stocké directement
+            dans la table transactions par le webhook (pas besoin de joindre profiles
+            ce qui évite les problèmes de RLS)                                      */
       const { data: txData, error: txError } = await supabase
         .from("transactions")
         .select(`
-          id, amount, status, created_at, user_id, type, coaching_request_id,
+          id, amount, status, created_at, user_id, type,
+          subscription_end_date,
+          coaching_request_id,
           registrations ( id, first_name, last_name ),
           coaching_requests ( first_name, last_name, email, theme, requested_date )
         `)
@@ -39,28 +43,10 @@ export const AdminPaiements = () => {
 
       if (txError) throw txError;
 
-      /* 2. Profiles — on cherche par TOUS les user_id présents dans les transactions
-            (transactions.user_id référence registrations.id qui = auth.users.id = profiles.id
-             dans un setup Supabase standard) */
-      const userIds = [...new Set((txData ?? []).map((t: any) => t.user_id).filter(Boolean))];
-
-      let profilesMap = new Map<string, any>();
-
-      if (userIds.length > 0) {
-        const { data: profilesData, error: profileError } = await supabase
-          .from("profiles")
-          .select("id, subscription_end_date, subscription_status")
-          .in("id", userIds);
-
-        if (profileError) throw profileError;
-        profilesData?.forEach((p: any) => profilesMap.set(p.id, p));
-      }
-
       const enriched = (txData ?? []).map((tx: any) => {
         const isCoaching = tx.type === "coaching";
         const reg        = tx.registrations;
         const coaching   = tx.coaching_requests;
-        const profile    = profilesMap.get(tx.user_id);
 
         const userName = isCoaching
           ? (coaching ? `${coaching.first_name} ${coaching.last_name}`.trim() : "—")
@@ -69,11 +55,15 @@ export const AdminPaiements = () => {
         return {
           ...tx,
           userName,
-          coachingEmail:      coaching?.email           || null,
-          coachingTheme:      coaching?.theme           || null,
-          coachingDate:       coaching?.requested_date  || null,
-          subscriptionEnd:    profile?.subscription_end_date || null,
-          subscriptionStatus: profile?.subscription_status  || "inactive",
+          authUserId:     tx.user_id                          || reg?.id || null,
+          coachingEmail:  coaching?.email                     || null,
+          coachingTheme:  coaching?.theme                     || null,
+          coachingDate:   coaching?.requested_date            || null,
+          // subscriptionEnd lu directement depuis la colonne de la transaction
+          subscriptionEnd: tx.subscription_end_date           || null,
+          subscriptionStatus: tx.subscription_end_date
+            ? (new Date(tx.subscription_end_date) > new Date() ? "active" : "expired")
+            : "inactive",
         };
       });
 
@@ -351,8 +341,8 @@ export const AdminPaiements = () => {
 
                   {/* Action */}
                   <TableCell>
-                    {tx.type === "subscription" && tx.user_id && (
-                      <Button variant="ghost" size="sm" onClick={() => forceDeactivate(tx.user_id)}>
+                    {tx.type === "subscription" && tx.authUserId && (
+                      <Button variant="ghost" size="sm" onClick={() => forceDeactivate(tx.authUserId)}>
                         <UserX size={14} />
                       </Button>
                     )}
