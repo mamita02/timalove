@@ -118,7 +118,6 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
     setPayError(null);
 
     try {
-      // 1. Insérer la demande dans coaching_requests
       const { data: coaching, error: insertError } = await supabase
         .from("coaching_requests")
         .insert({
@@ -142,19 +141,16 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
         throw new Error("Impossible d'enregistrer votre demande. Veuillez réessayer.");
       }
 
-      // 2. Appeler la Edge Function via supabase.functions.invoke
       const { data, error } = await supabase.functions.invoke("naboo-coaching-payment", {
         body: { coachingRequestId: coaching.id },
       });
 
       if (error) throw new Error(error.message);
 
-      // 3. Parser la réponse (même pattern que SubscriptionButton)
       const parsed = typeof data === "string" ? JSON.parse(data) : data;
 
       if (!parsed?.url) throw new Error("URL manquante dans la réponse");
 
-      // 4. Rediriger vers la page de paiement Naboo
       window.location.href = parsed.url;
 
     } catch (err: any) {
@@ -178,10 +174,11 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
         }}
       />
 
-      {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
+      {/* Wrapper scrollable — s'aligne en haut sur mobile, centré sur desktop */}
+      <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-4 py-4 pointer-events-none md:items-center md:py-6">
+        {/* Modal */}
         <div
-          className="pointer-events-auto relative w-full overflow-hidden rounded-2xl shadow-2xl transition-all duration-300"
+          className="pointer-events-auto relative w-full rounded-2xl shadow-2xl transition-all duration-300"
           style={{
             maxWidth: "860px",
             background: "#FFF5F5",
@@ -202,9 +199,9 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
 
           <div className="grid md:grid-cols-[240px_1fr]">
 
-            {/* ── Panneau gauche ── */}
+            {/* ── Panneau gauche — masqué sur mobile ── */}
             <div
-              className="flex flex-col justify-between px-6 py-8"
+              className="hidden md:flex flex-col justify-between px-6 py-8"
               style={{ background: "linear-gradient(160deg, #2a1010 0%, #3d1818 100%)" }}
             >
               <div>
@@ -250,7 +247,42 @@ export const CoachingFormModal = ({ isOpen, onClose, initialStep = 1 }: Coaching
             </div>
 
             {/* ── Panneau droit ── */}
-            <div className="flex flex-col px-7 py-7">
+            <div className="flex flex-col px-5 py-6 md:px-7 md:py-7">
+
+              {/* Bandeau header visible uniquement sur mobile */}
+              <div
+                className="flex md:hidden items-center justify-between mb-4 pb-4"
+                style={{ borderBottom: "1px solid rgba(220,180,170,0.35)" }}
+              >
+                <div>
+                  <span className="font-serif text-xs italic tracking-widest" style={{ color: "#c97a6a" }}>
+                    ✦ TimaLove
+                  </span>
+                  <div className="mt-0.5">
+                    <span className="font-serif text-lg font-normal" style={{ color: "#3d1818" }}>Coaching </span>
+                    <span className="font-serif text-lg font-normal italic" style={{ color: "#c97a6a" }}>vie amoureuse</span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-3">
+                    {[
+                      { icon: <Clock size={11} />, label: "35 min" },
+                      { icon: <Shield size={11} />, label: "Confidentiel" },
+                    ].map(({ icon, label }) => (
+                      <div key={label} className="flex items-center gap-1">
+                        <span style={{ color: "#c97a6a" }}>{icon}</span>
+                        <span className="text-xs font-light" style={{ color: "rgba(100,60,60,0.5)" }}>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div
+                  className="rounded-xl px-3 py-2 text-center shrink-0"
+                  style={{ background: "rgba(200,100,80,0.1)", border: "0.5px solid rgba(200,110,95,0.25)" }}
+                >
+                  <p className="font-serif text-2xl font-normal leading-none" style={{ color: "#c97a6a" }}>40 €</p>
+                  <p className="text-xs mt-0.5" style={{ color: "rgba(100,60,60,0.4)" }}>/ séance</p>
+                </div>
+              </div>
+
               <Stepper current={step} />
 
               <div className="mt-6 flex-1">
@@ -343,7 +375,7 @@ const StepForm = ({ form, errors, set, setRadio, onNext }: StepFormProps) => (
         <FI placeholder="Votre nom" value={form.nom} onChange={set("nom")} hasError={!!errors.nom} />
       </F>
     </div>
-    <div className="mb-3 grid grid-cols-2 gap-2.5">
+    <div className="mb-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
       <F label="Email *" error={errors.email}>
         <FI type="email" placeholder="votre@email.com" value={form.email} onChange={set("email")} hasError={!!errors.email} />
       </F>
@@ -353,7 +385,7 @@ const StepForm = ({ form, errors, set, setRadio, onNext }: StepFormProps) => (
     </div>
     <div className="mb-3">
       <FL>Vous êtes *</FL>
-      <div className="mt-1.5 flex gap-2">
+      <div className="mt-1.5 flex flex-wrap gap-2">
         {GENRE_OPTIONS.map(o => (
           <RO key={o.value} label={o.label} active={form.genre === o.value} onClick={() => setRadio("genre", o.value)} />
         ))}
@@ -361,7 +393,7 @@ const StepForm = ({ form, errors, set, setRadio, onNext }: StepFormProps) => (
     </div>
     <div className="mb-1">
       <FL>Votre situation *</FL>
-      <div className="mt-1.5 flex gap-2">
+      <div className="mt-1.5 flex flex-wrap gap-2">
         {SITUATION_OPTIONS.map(o => (
           <RO key={o.value} label={o.label} active={form.situation === o.value} onClick={() => setRadio("situation", o.value)} />
         ))}
@@ -438,8 +470,8 @@ const StepPayment = ({ form, loading, payError, onPay, onBack }: StepPaymentProp
       <p className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: "#c97a6a" }}>
         Récapitulatif
       </p>
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-sm font-medium" style={{ color: "#3d1818" }}>Coaching vie amoureuse & couple</p>
           <p className="text-xs font-light" style={{ color: "rgba(100,60,60,0.6)" }}>
             35 min · {form.date
@@ -455,7 +487,7 @@ const StepPayment = ({ form, loading, payError, onPay, onBack }: StepPaymentProp
             Pour : {form.prenom} {form.nom}
           </p>
         </div>
-        <p className="font-serif text-2xl font-normal" style={{ color: "#c97a6a" }}>40 €</p>
+        <p className="font-serif text-2xl font-normal shrink-0" style={{ color: "#c97a6a" }}>40 €</p>
       </div>
     </div>
 
@@ -595,7 +627,7 @@ const F = ({ label, error, children }: { label: string; error?: string; children
 );
 
 const base = (err?: boolean): React.CSSProperties => ({
-  backgroundColor: err ? "rgba(220,90,90,0.04)" : "#ffffff",  // ✅ backgroundColor pas background
+  backgroundColor: err ? "rgba(220,90,90,0.04)" : "#ffffff",
   border: `1px solid ${err ? "rgba(200,80,80,0.4)" : "rgba(220,180,170,0.55)"}`,
   borderRadius: "8px", padding: "8px 12px",
   color: "#3d1818", fontSize: "13px", fontWeight: 400,
@@ -624,7 +656,7 @@ const FS = ({ value, onChange, hasError, children }: {
     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c97a6a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
     backgroundRepeat: "no-repeat",
     backgroundPosition: "right 12px center",
-    backgroundSize: "auto",   // ✅ évite le conflit shorthand
+    backgroundSize: "auto",
     paddingRight: "32px",
     cursor: "pointer",
   }}>
