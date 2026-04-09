@@ -87,7 +87,7 @@ const Legal = () => {
                     <h3 className="font-semibold mb-2">Éditeur</h3>
                     <p>TimaLove</p>
                     <p>Fatimata Ba</p>
-                    <p>0033 77 970 9465</p>
+                    <p>+003 361 303 14 55</p>
                   </div>
                   <div>
                     <h3 className="font-semibold mb-2">Conception</h3>
