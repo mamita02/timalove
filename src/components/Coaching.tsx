@@ -124,13 +124,14 @@ export const CoachingSection = () => {
               className="mb-8 rounded-2xl border border-rose-800/30 p-5"
               style={{ background: "rgba(200,90,80,0.1)" }}
             >
+              {/* Ligne principale : Durée / Tarif / Format */}
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-widest text-white/40">
                     Durée
                   </p>
                   <p className="mt-1 text-2xl font-serif font-normal text-white">
-                    35 <span className="text-base text-white/60">min</span>
+                    40 <span className="text-base text-white/60">min</span>
                   </p>
                 </div>
                 <div
@@ -144,6 +145,7 @@ export const CoachingSection = () => {
                   <p className="mt-1 text-2xl font-serif font-normal text-rose-400">
                     40 <span className="text-base text-rose-300/70">€</span>
                   </p>
+                  <p className="text-xs text-rose-300/60 mt-0.5">≈ 31 000 FCFA</p>
                 </div>
                 <div
                   className="h-10 w-px"
@@ -157,6 +159,18 @@ export const CoachingSection = () => {
                     En ligne
                   </p>
                 </div>
+              </div>
+
+              {/* Disponibilité */}
+              <div
+                className="mt-4 pt-4 flex items-center gap-2"
+                style={{ borderTop: "1px solid rgba(200,100,80,0.2)" }}
+              >
+                <CalendarHeart size={13} className="shrink-0 text-rose-400/70" />
+                <span className="text-xs font-light text-white/50">
+                  Disponible{" "}
+                  <span className="text-white/75 font-normal">du lundi au samedi</span>
+                </span>
               </div>
             </div>
 
