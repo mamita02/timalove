@@ -99,7 +99,7 @@ export const ContactSection = () => {
             <h3 className="font-serif text-xl mb-2">WhatsApp</h3>
             <p className="text-sm text-rose-100/80 mb-4 italic">Conseil instantané</p>
             <a
-              href="https://wa.me/33600000000"
+              href="https://wa.me/+003 361 303 14 55"
               target="_blank"
               className="font-bold border-b-2 border-white/30 hover:border-white transition-all pb-1 text-sm"
             >
