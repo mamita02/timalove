@@ -29,32 +29,14 @@ export const AdminActivities = () => {
     }
 
     const headers = [
-      "Prénom",
-      "Nom",
-      "Email",
-      "Téléphone",
-      "Âge",
-      "Ville",
-      "Pays",
-      "Pays de résidence",
-      "Genre",
-      "Religion",
-      "Statut",
-      "Date inscription",
+      "Prénom", "Nom", "Email", "Téléphone", "Âge", "Ville",
+      "Pays", "Pays de résidence", "Genre", "Religion", "Statut", "Date inscription",
     ];
 
     const rows = (data || []).map((user: any) => [
-      user.first_name,
-      user.last_name,
-      user.email,
-      user.phone,
-      user.age,
-      user.city,
-      user.country,
-      user.residence_country,
-      user.gender,
-      user.religion,
-      user.status,
+      user.first_name, user.last_name, user.email, user.phone, user.age,
+      user.city, user.country, user.residence_country, user.gender,
+      user.religion, user.status,
       user.created_at ? new Date(user.created_at).toLocaleString('fr-FR') : "",
     ]);
 
@@ -73,18 +55,15 @@ export const AdminActivities = () => {
 
   const fetchDashboardData = async () => {
     setLoading(true);
-    
-    // 1. Récupération des activités (Notifications)
-    // ⚠️ CORRECTION ICI : On utilise un simple select('*') car le bon message texte
-    // est DÉJÀ généré par les triggers de ta base de données Supabase.
+
     const { data: notificationsData, error: notificationsError } = await supabase
       .from('notifications')
-      .select('*') 
+      .select('*')
       .in('type', ['admin_like', 'admin_request_received', 'meeting_confirmed'])
       .order('created_at', { ascending: false });
 
     if (notificationsError) {
-      console.error("Erreur de récupération des notifications:", notificationsError);
+      console.error("Erreur notifications:", notificationsError);
     } else if (notificationsData) {
       setActivities(notificationsData);
       const likes = notificationsData.filter(a => a.type === 'admin_like').length;
@@ -92,16 +71,15 @@ export const AdminActivities = () => {
       setStats({ likes, requests: reqs });
     }
 
-    // 2. Récupération des 20 derniers inscrits
     const { data: usersData, error: usersError } = await supabase
       .from('registrations')
       .select('id, first_name, age, city, created_at')
-      .neq('role', 'admin') // On exclut l'admin
+      .neq('role', 'admin')
       .order('created_at', { ascending: false })
       .limit(20);
 
     if (usersError) {
-      console.error("Erreur de récupération des utilisateurs:", usersError);
+      console.error("Erreur utilisateurs:", usersError);
     } else if (usersData) {
       setRecentUsers(usersData);
     }
@@ -112,7 +90,6 @@ export const AdminActivities = () => {
   useEffect(() => {
     fetchDashboardData();
 
-    // 3. ECOUTE EN TEMPS RÉEL
     const notifChannel = supabase
       .channel('admin-notifications')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, () => {
@@ -132,6 +109,32 @@ export const AdminActivities = () => {
       supabase.removeChannel(usersChannel);
     };
   }, []);
+
+  // ✅ Redirige vers /admin/matching en pré-remplissant les IDs depuis la notification
+  const handleGererMatch = async (activity: any) => {
+    // La notification contient from_user_id (celui qui envoie la demande = homme)
+    // et to_user_id (celui qui reçoit = femme), ou l'inverse selon ta logique
+    // On stocke les deux IDs dans localStorage pour que MatchingManager les lise
+    if (activity.from_user_id && activity.to_user_id) {
+      // Récupérer le genre des deux pour savoir qui est homme/femme
+      const { data: profiles } = await supabase
+        .from('registrations')
+        .select('id, gender')
+        .in('id', [activity.from_user_id, activity.to_user_id]);
+
+      if (profiles) {
+        const man = profiles.find(p => p.gender === 'male');
+        const woman = profiles.find(p => p.gender === 'female');
+
+        localStorage.setItem('matching_prefill', JSON.stringify({
+          manId: man?.id || null,
+          womanId: woman?.id || null,
+        }));
+      }
+    }
+
+    window.location.href = '/admin/matching';
+  };
 
   return (
     <div className="space-y-6">
@@ -171,18 +174,16 @@ export const AdminActivities = () => {
         </Card>
       </div>
 
-      {/* Grille principale : Interactions & Inscrits */}
+      {/* Grille principale */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        
-        {/* COLONNE 1 : Liste des interactions */}
+
+        {/* COLONNE 1 : Interactions */}
         <Card className="flex flex-col h-[600px] border-slate-200 shadow-sm">
           <CardHeader className="border-b bg-slate-50/50 shrink-0">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <Activity className="h-5 w-5 text-primary" />
-                Dernières interactions
-              </CardTitle>
-            </div>
+            <CardTitle className="text-lg font-medium flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Dernières interactions
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0 flex-1 overflow-y-auto">
             <div className="divide-y">
@@ -197,9 +198,9 @@ export const AdminActivities = () => {
                       <div className={`p-2 rounded-full ${
                         activity.type === 'admin_like' ? 'bg-rose-100' : 'bg-amber-100'
                       }`}>
-                        {activity.type === 'admin_like' ? 
-                          <Heart className="h-4 w-4 text-rose-600" /> : 
-                          <Zap className="h-4 w-4 text-amber-600" />
+                        {activity.type === 'admin_like'
+                          ? <Heart className="h-4 w-4 text-rose-600" />
+                          : <Zap className="h-4 w-4 text-amber-600" />
                         }
                       </div>
                       <div>
@@ -209,9 +210,13 @@ export const AdminActivities = () => {
                         </p>
                       </div>
                     </div>
-                    
+
                     {activity.type === 'admin_request_received' && (
-                      <Badge variant="outline" className="cursor-pointer hover:bg-primary hover:text-white transition-colors shrink-0 ml-2" onClick={() => window.location.href = '/admin/matching'}>
+                      <Badge
+                        variant="outline"
+                        className="cursor-pointer hover:bg-primary hover:text-white transition-colors shrink-0 ml-2"
+                        onClick={() => handleGererMatch(activity)}
+                      >
                         Gérer le Match
                       </Badge>
                     )}
@@ -222,7 +227,7 @@ export const AdminActivities = () => {
           </CardContent>
         </Card>
 
-        {/* COLONNE 2 : Les derniers inscrits */}
+        {/* COLONNE 2 : Derniers inscrits */}
         <Card className="flex flex-col h-[600px] border-slate-200 shadow-sm">
           <CardHeader className="border-b bg-slate-50/50 shrink-0">
             <div className="flex items-center justify-between">
@@ -264,10 +269,9 @@ export const AdminActivities = () => {
                         </div>
                       </div>
                     </div>
-                    
                     <div className="text-right">
                       <p className="text-xs text-slate-400 flex items-center gap-1 justify-end">
-                        <Clock size={12} /> 
+                        <Clock size={12} />
                         {new Date(user.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                       </p>
                       <Badge variant="outline" className="mt-1 text-[10px] py-0 border-blue-200 text-blue-600">Nouveau</Badge>
