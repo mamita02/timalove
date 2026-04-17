@@ -6,6 +6,7 @@ import {
   getAllMatches,
 } from "@/lib/matching";
 import { getAllRegistrations, type RegistrationRecord } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ import {
   Calendar,
   Check,
   Copy,
+  Crown,
   ExternalLink,
   Heart,
   Mail,
@@ -45,10 +47,15 @@ import {
   Video,
 } from "lucide-react";
 
+// Type enrichi avec statut premium
+type MemberWithSubscription = RegistrationRecord & {
+  isPremium: boolean;
+};
+
 export const MatchingManager = () => {
-  const [men, setMen] = useState<RegistrationRecord[]>([]);
+  const [men, setMen] = useState<MemberWithSubscription[]>([]);
   const [women, setWomen] = useState<RegistrationRecord[]>([]);
-  const [selectedMan, setSelectedMan] = useState<RegistrationRecord | null>(null);
+  const [selectedMan, setSelectedMan] = useState<MemberWithSubscription | null>(null);
   const [selectedWoman, setSelectedWoman] = useState<RegistrationRecord | null>(null);
   const [scheduledDate, setScheduledDate] = useState("");
   const [loading, setLoading] = useState(true);
@@ -58,6 +65,9 @@ export const MatchingManager = () => {
   const [copied, setCopied] = useState(false);
   const [matches, setMatches] = useState<any[]>([]);
 
+  // Filtres hommes
+  const [filterPremium, setFilterPremium] = useState<'all' | 'premium' | 'free'>('all');
+
   useEffect(() => {
     loadApprovedRegistrations();
     loadMatches();
@@ -66,24 +76,35 @@ export const MatchingManager = () => {
   const loadApprovedRegistrations = async () => {
     setLoading(true);
     try {
-      // Charger TOUTES les inscriptions (pas seulement approved pour le test)
       const response = await getAllRegistrations({ limit: 100 });
-      
+
       if (response.success && response.data) {
-        console.log("📊 Inscriptions chargées:", response.data.length);
         const allRegistrations = response.data;
-        
-        // Séparation par genre (male/female)
+
         const menList = allRegistrations.filter(r => r.gender === 'male');
         const womenList = allRegistrations.filter(r => r.gender === 'female');
-        
-        setMen(menList);
+
+        // Récupérer les statuts d'abonnement pour tous les hommes
+        const menIds = menList.map(m => m.id);
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, subscription_status, subscription_end_date')
+          .in('id', menIds);
+
+        // Enrichir chaque homme avec son statut premium
+        const menWithSub: MemberWithSubscription[] = menList.map(man => {
+          const profile = profilesData?.find(p => p.id === man.id);
+          const isPremium =
+            profile?.subscription_status === 'active' &&
+            profile?.subscription_end_date &&
+            new Date(profile.subscription_end_date) > new Date();
+
+          return { ...man, isPremium: !!isPremium };
+        });
+
+        setMen(menWithSub);
         setWomen(womenList);
-        
-        console.log("👨 Hommes:", menList.length);
-        console.log("👩 Femmes:", womenList.length);
       } else {
-        console.error("❌ Erreur de chargement:", response.error);
         toast({
           title: "Erreur",
           description: response.error || "Impossible de charger les inscriptions",
@@ -91,10 +112,9 @@ export const MatchingManager = () => {
         });
       }
     } catch (error) {
-      console.error("❌ Erreur:", error);
       toast({
         title: "Erreur",
-        description: "Impossible de charger les inscriptions approuvées",
+        description: "Impossible de charger les inscriptions",
         variant: "destructive",
       });
     } finally {
@@ -109,6 +129,16 @@ export const MatchingManager = () => {
     }
   };
 
+  // Hommes filtrés selon le filtre actif
+  const filteredMen = men.filter(man => {
+    if (filterPremium === 'premium') return man.isPremium;
+    if (filterPremium === 'free') return !man.isPremium;
+    return true;
+  });
+
+  const premiumCount = men.filter(m => m.isPremium).length;
+  const freeCount = men.filter(m => !m.isPremium).length;
+
   const handlePreview = () => {
     if (!selectedMan || !selectedWoman || !scheduledDate) {
       toast({
@@ -119,7 +149,6 @@ export const MatchingManager = () => {
       return;
     }
 
-    // Générer le lien Meet
     const link = generateGoogleMeetLink(
       `${selectedMan.firstName} ${selectedMan.lastName}`,
       `${selectedWoman.firstName} ${selectedWoman.lastName}`,
@@ -134,16 +163,9 @@ export const MatchingManager = () => {
 
     setCreating(true);
     try {
-      // Créer le match
-      const response = await createMatch(
-        selectedMan,
-        selectedWoman,
-        scheduledDate,
-        meetLink
-      );
+      const response = await createMatch(selectedMan, selectedWoman, scheduledDate, meetLink);
 
       if (response.success) {
-        // Créer le lien calendrier
         const calendarLink = createGoogleCalendarEvent(
           `${selectedMan.firstName} ${selectedMan.lastName}`,
           `${selectedWoman.firstName} ${selectedWoman.lastName}`,
@@ -153,7 +175,6 @@ export const MatchingManager = () => {
           meetLink
         );
 
-        // Générer les emails
         const emailMan = generateInvitationEmail(
           selectedMan.firstName,
           `${selectedWoman.firstName}`,
@@ -170,31 +191,24 @@ export const MatchingManager = () => {
           calendarLink
         );
 
-        // Afficher les emails dans la console (en production, envoyer via API)
-        console.log("📧 Email pour l'homme:", emailMan);
-        console.log("📧 Email pour la femme:", emailWoman);
+        console.log("📧 Email homme:", emailMan);
+        console.log("📧 Email femme:", emailWoman);
 
-        // Ajouter une notification
-        
         toast({
           title: "✓ Match créé avec succès !",
           description: `Invitations envoyées à ${selectedMan.firstName} et ${selectedWoman.firstName}`,
         });
 
-        // Réinitialiser
         setShowPreview(false);
         setSelectedMan(null);
         setSelectedWoman(null);
         setScheduledDate("");
         setMeetLink("");
-        
-        // Recharger les matches
         loadMatches();
       } else {
         throw new Error(response.error);
       }
     } catch (error) {
-      console.error("Erreur:", error);
       toast({
         title: "Erreur",
         description: "Impossible de créer le match",
@@ -209,17 +223,23 @@ export const MatchingManager = () => {
     navigator.clipboard.writeText(meetLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    toast({
-      title: "Lien copié !",
-      description: "Le lien Google Meet a été copié dans le presse-papier",
-    });
+    toast({ title: "Lien copié !" });
   };
 
-  const ProfileCard = ({ person }: { person: RegistrationRecord }) => (
+  const ProfileCard = ({ person, showBadge = false }: { person: MemberWithSubscription | RegistrationRecord; showBadge?: boolean }) => (
     <div className="p-4 border rounded-lg space-y-2">
       <h4 className="font-semibold flex items-center gap-2">
         <User className="h-4 w-4" />
         {person.firstName} {person.lastName}
+        {showBadge && 'isPremium' in person && (
+          <span className={`ml-auto text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
+            person.isPremium
+              ? 'bg-amber-100 text-amber-700'
+              : 'bg-slate-100 text-slate-500'
+          }`}>
+            {person.isPremium ? <><Crown size={10} /> Premium</> : 'Gratuit'}
+          </span>
+        )}
       </h4>
       <div className="text-sm text-muted-foreground space-y-1">
         <p className="flex items-center gap-2">
@@ -259,12 +279,45 @@ export const MatchingManager = () => {
               </div>
             ) : (
               <>
+                {/* ── SECTION HOMMES avec filtre premium ── */}
                 <div>
-                  <Label>Profil masculin</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Profil masculin</Label>
+                    {/* Compteurs */}
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="flex items-center gap-1 text-amber-600 font-medium">
+                        <Crown size={11} /> {premiumCount} premium
+                      </span>
+                      <span className="text-slate-400">•</span>
+                      <span className="text-slate-500">{freeCount} gratuit</span>
+                    </div>
+                  </div>
+
+                  {/* Boutons filtre */}
+                  <div className="flex gap-2 mb-3">
+                    {(['all', 'premium', 'free'] as const).map(f => (
+                      <button
+                        key={f}
+                        onClick={() => setFilterPremium(f)}
+                        className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                          filterPremium === f
+                            ? f === 'premium'
+                              ? 'bg-amber-500 text-white border-amber-500'
+                              : f === 'free'
+                              ? 'bg-slate-600 text-white border-slate-600'
+                              : 'bg-pink-500 text-white border-pink-500'
+                            : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
+                        }`}
+                      >
+                        {f === 'all' ? 'Tous' : f === 'premium' ? '👑 Premium' : 'Gratuit'}
+                      </button>
+                    ))}
+                  </div>
+
                   <Select
                     value={selectedMan?.id}
                     onValueChange={(id) => {
-                      const man = men.find((m) => m.id === id);
+                      const man = filteredMen.find((m) => m.id === id);
                       setSelectedMan(man || null);
                     }}
                   >
@@ -272,22 +325,48 @@ export const MatchingManager = () => {
                       <SelectValue placeholder="Sélectionner un homme" />
                     </SelectTrigger>
                     <SelectContent>
-                      {men.map((man) => (
-                        <SelectItem key={man.id} value={man.id}>
-                          {man.firstName} {man.lastName} - {man.city}, {man.age} ans
-                        </SelectItem>
-                      ))}
+                      {/* Groupe Premium */}
+                      {filteredMen.some(m => m.isPremium) && (
+                        <>
+                          <div className="px-2 py-1.5 text-xs font-bold text-amber-600 flex items-center gap-1 bg-amber-50">
+                            <Crown size={11} /> Membres Premium
+                          </div>
+                          {filteredMen.filter(m => m.isPremium).map((man) => (
+                            <SelectItem key={man.id} value={man.id}>
+                              <span className="flex items-center gap-2">
+                                <Crown size={12} className="text-amber-500" />
+                                {man.firstName} {man.lastName} — {man.city}, {man.age} ans
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+                      {/* Groupe Gratuit */}
+                      {filteredMen.some(m => !m.isPremium) && (
+                        <>
+                          <div className="px-2 py-1.5 text-xs font-bold text-slate-500 flex items-center gap-1 bg-slate-50 mt-1">
+                            Membres Gratuits
+                          </div>
+                          {filteredMen.filter(m => !m.isPremium).map((man) => (
+                            <SelectItem key={man.id} value={man.id}>
+                              {man.firstName} {man.lastName} — {man.city}, {man.age} ans
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
+
                   {selectedMan && (
                     <div className="mt-2">
-                      <ProfileCard person={selectedMan} />
+                      <ProfileCard person={selectedMan} showBadge />
                     </div>
                   )}
                 </div>
 
                 <Separator />
 
+                {/* ── SECTION FEMMES (inchangée) ── */}
                 <div>
                   <Label>Profil féminin</Label>
                   <Select
@@ -303,7 +382,7 @@ export const MatchingManager = () => {
                     <SelectContent>
                       {women.map((woman) => (
                         <SelectItem key={woman.id} value={woman.id}>
-                          {woman.firstName} {woman.lastName} - {woman.city}, {woman.age} ans
+                          {woman.firstName} {woman.lastName} — {woman.city}, {woman.age} ans
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -347,9 +426,7 @@ export const MatchingManager = () => {
               <Users className="h-5 w-5" />
               Matches récents
             </CardTitle>
-            <CardDescription>
-              Historique des rencontres planifiées
-            </CardDescription>
+            <CardDescription>Historique des rencontres planifiées</CardDescription>
           </CardHeader>
           <CardContent>
             {matches.length === 0 ? (
@@ -409,7 +486,7 @@ export const MatchingManager = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Homme</Label>
-                {selectedMan && <ProfileCard person={selectedMan} />}
+                {selectedMan && <ProfileCard person={selectedMan} showBadge />}
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Femme</Label>
