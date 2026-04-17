@@ -73,6 +73,30 @@ export const MatchingManager = () => {
     loadMatches();
   }, []);
 
+  // ✅ Après chargement des membres, pré-remplir depuis localStorage si dispo
+  useEffect(() => {
+    if (men.length === 0 && women.length === 0) return;
+
+    const raw = localStorage.getItem('matching_prefill');
+    if (!raw) return;
+
+    try {
+      const { manId, womanId } = JSON.parse(raw);
+      if (manId) {
+        const man = men.find(m => m.id === manId);
+        if (man) setSelectedMan(man);
+      }
+      if (womanId) {
+        const woman = women.find(w => w.id === womanId);
+        if (woman) setSelectedWoman(woman);
+      }
+      // Nettoyer après lecture
+      localStorage.removeItem('matching_prefill');
+    } catch (e) {
+      localStorage.removeItem('matching_prefill');
+    }
+  }, [men, women]);
+
   const loadApprovedRegistrations = async () => {
     setLoading(true);
     try {
