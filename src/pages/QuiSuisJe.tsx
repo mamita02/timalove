@@ -1,4 +1,4 @@
-import femme1Img from "@/assets/femme 1.png";
+import TimaImg from "@/assets/femme 1.png";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ const QuiSuisJe = () => {
           {/* IMAGE */}
           <div className="absolute inset-0 lg:inset-y-0 lg:right-0 lg:left-auto w-full lg:w-1/2 h-full pointer-events-none">
             <img
-              src={femme1Img}
+              src={TimaImg}
               alt="Tima"
               className="w-full h-full object-cover object-center"
             />
