@@ -1,4 +1,4 @@
-import TimaImg from "@/assets/femme 1.png";
+import femme1Img from "@/assets/femme 1.png";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
 export const AboutSection = () => {
