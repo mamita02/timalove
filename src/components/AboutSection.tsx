@@ -1,4 +1,4 @@
-import TimaImg from "@/assets/Tima.png";
+import TimaImg from "@/assets/femme 1.png";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
 export const AboutSection = () => {
@@ -12,7 +12,7 @@ export const AboutSection = () => {
             <div className="relative">
               <div className="absolute -top-10 -right-10 w-48 h-48 bg-rose-200/10 rounded-full blur-3xl -z-10" />
               <img
-                src={TimaImg}
+                src={femme1Img}
                 alt="Mariage TimaLove"
                 className="w-full h-full object-cover"
               />
@@ -31,7 +31,7 @@ export const AboutSection = () => {
               
               <h2 className="text-4xl md:text-5xl font-serif text-slate-800 leading-tight">
                 L'âme derrière <br />
-                <span className="italic text-primary/80">TimaLove</span>
+                <span className="italic text-primary/80">Éloria Studio</span>
               </h2>
             </div>
             
